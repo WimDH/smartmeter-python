@@ -16,6 +16,7 @@ sast:
 pytest:
   stage: test
   script:
+    - pip install -U pip
     - pip install -r requirements.txt
     - pip install -r requirements.dev.txt
     - pytest tests --junitxml=report.xml
