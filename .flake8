@@ -1,0 +1,11 @@
+[flake8]
+per-file-ignores = 
+    test_*.py: E402
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    .venv
+max-complexity = 10
+max-line-length = 130
