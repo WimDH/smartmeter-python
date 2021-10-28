@@ -7,16 +7,9 @@
 default:
   image: python:3.8.10
 
-stages:
-  - security tests
-  - unit tests
-
-
 sast:
-  stage: security-tests
 
 pytest:
-  stage: unit tests
   script:
     - pip install -U pip
     - pip install -r requirements.txt
