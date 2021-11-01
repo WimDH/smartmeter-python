@@ -119,7 +119,7 @@ def read_serial(
                         # Process the message if the CRC is correct.
                         decoded_telegram = telegram.decode(-"ascii")
                         LOG.debug(f"Recorded a valid telegram: {decoded_telegram}")
-                        
+
                 if _quit_after and _quit_after == telegram_count:
                     break
 
