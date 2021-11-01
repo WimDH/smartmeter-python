@@ -1,10 +1,14 @@
 from crccheck.crc import Crc16Lha
 import serial
 import re
+from logging import getLogger
+from typing import Optional
+from serial.serialutil import SerialException
 
 
+LOG = getLogger(".")
 FIELDS = [
-    # Fieldname, dictionary key, startpos, endpos
+    # (Field name, dictionary key, start position, end position)
     ("1-0:1.8.1", "total_consumption_day", 10, 20),
     ("1-0:1.8.2", "total_consumption_night", 10, 20),
     ("1-0:2.8.1", "total_injection_day", 10, 20),
@@ -54,31 +58,62 @@ def parse(raw_msg):
 def check_msg(raw_msg: str) -> bool:
     """
     Check if the message is valid.
-    The provided CRC is
+    The provided CRC should be the same as the calculated one.
+    Return True
     """
     # Find the end of message character '!'
     pos = raw_msg.find(b"!")
     data = raw_msg[: pos + 1]
-    provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))
+    provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
     calculated_crc = hex(Crc16Lha.calc(data))
     return calculated_crc == provided_crc
 
 
-def read_serial() -> str:
+def read_serial(
+    port: str, baudrate: int, bytesize: int, parity: str, stopbits: int, _quit_after: Optional[int] = None
+) -> str:
     """
     Read from the serial port until a complete message is detected.
     When the message is complete, add ir to the msg Queue as a sting.
+
+    _quit_after is only used during testing to break the infinite loop while reading from the serial port.
     """
+    telegram_count: int = 0
     line: bytes
+    start_of_telegram_detected: bool = False
+    telegram: bytearray = bytearray()
+    start_of_telegram = re.compile(r"^\/FLU\d{1}\\")
+    end_of_telegram = re.compile(r"^![A-Z0-9]{4}")
 
-    try:
-        # Todo: move serial port setting to somewhere else.
-        serial_port = serial.Serial("/dev/serial0", 115200)
+    LOG.debug(
+        f"Open serial port '{port}' with settings '{baudrate},{bytesize},{parity},{stopbits}'."
+    )
 
-        while True:
-            # Read data from port
-            line = serial_port.readline()
-            print(line)
+    with serial.Serial(port, baudrate, bytesize, parity, stopbits, timeout=5) as serial_port:
+        try: 
+            LOG.debug(f"Reading from serial port '{port}'.")
+            while True:
+                # Read data from port
+                line = serial_port.readline()
 
-    except Exception:
-        pass
+                if start_of_telegram.search(line.decode("ascii")):        # Start of message
+                    LOG.debug("Start of message deteced.")
+                    telegram = bytearray(line)
+                    start_of_telegram_detected = True
+                
+                if start_of_telegram_detected:
+                    telegram += line
+                
+                if end_of_telegram.search(line.decode("ascii")):          # End of message
+                    LOG.debug('End of message deteced')
+                    telegram_count += 1
+                    start_of_telegram_detected = False
+                    # Now process the message.
+                
+                if _quit_after and _quit_after == telegram_count:
+                    break
+
+        except SerialException:
+            LOG.critical(
+                f"Unable to configure serial port '{port}' with settings '{baudrate},{bytesize},{parity},{stopbits}'."
+            )
