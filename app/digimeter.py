@@ -70,7 +70,12 @@ def check_msg(raw_msg: str) -> bool:
 
 
 def read_serial(
-    port: str, baudrate: int, bytesize: int, parity: str, stopbits: int, _quit_after: Optional[int] = None
+    port: str,
+    baudrate: int,
+    bytesize: int,
+    parity: str,
+    stopbits: int,
+    _quit_after: Optional[int] = None,
 ) -> str:
     """
     Read from the serial port until a complete message is detected.
@@ -89,27 +94,32 @@ def read_serial(
         f"Open serial port '{port}' with settings '{baudrate},{bytesize},{parity},{stopbits}'."
     )
 
-    with serial.Serial(port, baudrate, bytesize, parity, stopbits, timeout=5) as serial_port:
-        try: 
+    with serial.Serial(
+        port, baudrate, bytesize, parity, stopbits, timeout=5
+    ) as serial_port:
+        try:
             LOG.debug(f"Reading from serial port '{port}'.")
             while True:
                 # Read data from port
                 line = serial_port.readline()
 
-                if start_of_telegram.search(line.decode("ascii")):        # Start of message
+                if start_of_telegram.search(line.decode("ascii")):  # Start of message
                     LOG.debug("Start of message deteced.")
                     telegram = bytearray(line)
                     start_of_telegram_detected = True
-                
+
                 if start_of_telegram_detected:
                     telegram += line
-                
-                if end_of_telegram.search(line.decode("ascii")):          # End of message
-                    LOG.debug('End of message deteced')
+
+                if end_of_telegram.search(line.decode("ascii")):  # End of message
+                    LOG.debug("End of message deteced")
                     telegram_count += 1
                     start_of_telegram_detected = False
-                    # Now process the message.
-                
+                    if check_msg(telegram):
+                        # Process the message if the CRC is correct.
+                        decoded_telegram = telegram.decode(-"ascii")
+                        LOG.debug(f"Recorded a valid telegram: {decoded_telegram}")
+                        
                 if _quit_after and _quit_after == telegram_count:
                     break
 
