@@ -118,10 +118,10 @@ def main() -> None:
         args=(
             msg_q,
             config["serial"]["port"],
-            config["serial"]["baudrate"],
-            config["serial"]["bytesize"],
+            int(config["serial"]["baudrate"]),
+            int(config["serial"]["bytesize"]),
             config["serial"]["parity"],
-            config["serial"]["stopbits"]
+            int(config["serial"]["stopbits"])
         )
     )
     serial_thread.start()
