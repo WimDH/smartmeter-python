@@ -118,7 +118,7 @@ def main() -> None:
         args=(
             msg_q,
             config["serial"]["port"],
-            config["serial"]["baurate"],
+            config["serial"]["baudrate"],
             config["serial"]["bytesize"],
             config["serial"]["parity"],
             config["serial"]["stopbits"]
