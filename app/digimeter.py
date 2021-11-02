@@ -4,7 +4,7 @@ import re
 from logging import getLogger
 from typing import Optional
 from serial.serialutil import SerialException
-
+from queue import Queue
 
 LOG = getLogger(".")
 FIELDS = [
@@ -66,10 +66,16 @@ def check_msg(raw_msg: str) -> bool:
     data = raw_msg[: pos + 1]
     provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
     calculated_crc = hex(Crc16Lha.calc(data))
-    return calculated_crc == provided_crc
+    crc_match = calculated_crc == provided_crc
+    if crc_match:
+        LOG.debug("Telegram has a valid CRC.")
+    else:
+        LOG.warning("Telegram has an invalid CRC!")
+    return crc_match
 
 
 def read_serial(
+    queue: Queue,
     port: str,
     baudrate: int,
     bytesize: int,
@@ -105,7 +111,7 @@ def read_serial(
 
                 if start_of_telegram.search(line.decode("ascii")):  # Start of message
                     LOG.debug("Start of message deteced.")
-                    telegram = bytearray(line)
+                    telegram = bytearray()
                     start_of_telegram_detected = True
 
                 if start_of_telegram_detected:
@@ -115,10 +121,14 @@ def read_serial(
                     LOG.debug("End of message deteced")
                     telegram_count += 1
                     start_of_telegram_detected = False
+                    LOG.debug("Recorded a new telegram: {}". format(telegram.decode("ascii")))
+                    
                     if check_msg(telegram):
-                        # Process the message if the CRC is correct.
-                        decoded_telegram = telegram.decode(-"ascii")
-                        LOG.debug(f"Recorded a valid telegram: {decoded_telegram}")
+                        # If the CRC is correct, add it to the queue.
+                        LOG.debug("Parsing telegram.")
+                        queue_data = parse(telegram.decode())
+                        LOG.debug("Add parsed data to the queue.")
+                        queue.put(queue_data)
 
                 if _quit_after and _quit_after == telegram_count:
                     break

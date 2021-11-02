@@ -1,10 +1,15 @@
+import sys
 import os
 import argparse
 import configparser
+import queue
 from typing import List, Union
 import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
+import threading
+import queue
+from app.digimeter import read_serial
 
 
 def convert_from_human_readable(value: Union[str, int]) -> int:
@@ -82,13 +87,50 @@ def setup_log(
     return logger
 
 
+def debug_q(q):
+    while True:
+        if not q.empty():
+            data = q.get()
+            print(data)
+
+
 def main() -> None:
     """
     Main entrypoint for the script.
     Parse the CLI options, load the config and setup the logging.
     """
-    log = setup_log(filename="testfile.log", log_to_stdout=True)
+    args = parse_cli(sys.argv[1:])
+    config = load_config(args.configfile)
+    log = setup_log(
+        filename=config["logging"]["logfile"],
+        log_to_stdout=config["logging"]["log_to_stdout"],
+        keep=config["logging"]["keep"],
+        size=config["logging"]["size"],
+        loglevel=config["logging"]["loglevel"]
+    )
     log.info("---start---")
+
+    msg_q = queue.Queue()
+
+    log.info("Starting serial port reader thread.")
+    serial_thread = threading.Thread(
+        target=read_serial,
+        args=(
+            msg_q,
+            config["serial"]["port"],
+            config["serial"]["baurate"],
+            config["serial"]["bytesize"],
+            config["serial"]["parity"],
+            config["serial"]["stopbits"]
+        )
+    )
+    serial_thread.start()
+
+    log.info("Starting queue debuger.")
+    q_thread = threading.Thread(
+        target=debug_q
+    )
+    q_thread.start()
 
 
 if __name__ == "__main__":

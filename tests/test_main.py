@@ -1,6 +1,5 @@
 import pytest
 import logging
-import coloredlogs
 from app.main import parse_cli, load_config, convert_from_human_readable, setup_log
 
 

@@ -1,17 +1,57 @@
 import os
 import sys
 import pathlib
+from types import GeneratorType
 import pytest
 import re
 from typing import List
+from crccheck.crc import Crc16Lha
+from io import BytesIO
+from queue import Queue
 
 sys.path.append(
     os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
 )
 
-from app.digimeter import parse, autoformat, check_msg
+from app.digimeter import parse, autoformat, check_msg, read_serial, serial
 
 ROOT_DIR = os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
+
+
+@pytest.fixture
+def msg_stream() -> BytesIO:
+    """
+    Monkeypatch.
+    Reads the file meter_stream, which contains multiple messages. Returns a ByteIO instance.
+    Also re-calculate the CRC because we anonimized the serial numbers and ID in the testdata.
+    """
+    data: bytearray = bytearray()           # Main data container
+    telegram: bytearray = bytearray()       # Container for one telegram
+    detected_telegram_start: bool = False
+
+    with open("tests/testdata/meter_stream.txt", "r") as fh:
+        for line in fh.readlines():
+            # The data coming from the meter has a M$ style newline.
+            line = re.sub(b"\n", b"\r\n", line.encode("ascii"))
+            
+            # Create new telegram at the start of a telegram.
+            if line.startswith(b'/FLU'):
+                telegram = bytearray()
+                detected_telegram_start = True
+            
+            if detected_telegram_start and not line.startswith(b"!AAAA"):
+                telegram += line
+
+            # Detect end of message.
+            # Re-calculate the CRC because we changed the ID and serials.
+            if line.startswith(b"!AAAA"):
+                telegram += b"!"
+                calculated_crc = str(hex(Crc16Lha.calc(telegram)))[2:].upper().zfill(4)
+                telegram += calculated_crc.encode("ascii") + b"\r\n"
+                data += telegram
+                detected_telegram_start = False
+
+    return BytesIO(data)
 
 
 @pytest.fixture
@@ -53,6 +93,21 @@ def test_autoformat():
     assert type(autoformat("test")) == str
     assert type(autoformat("1234")) == int
     assert type(autoformat("12.34")) == float
+
+
+def test_read_serial(monkeypatch, msg_stream):
+    """
+    Test the main loop. It reads data from the serial port.
+    todo: improve test by checking content of the queue.
+    """
+    def mock_stream(*args, **kwargs):
+        return msg_stream
+
+    monkeypatch.setattr(serial, "Serial", mock_stream)
+    q = Queue()
+    read_serial(q, "com1", 2400, 8, 'N', 1, _quit_after=2)
+
+    assert q.empty() is False
 
 
 def test_check_msg(one_msg):
