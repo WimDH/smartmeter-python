@@ -131,8 +131,8 @@ def read_serial(
                         LOG.debug("Add parsed data to the queue.")
                         msg_q.put(queue_data)
 
-            except (OSError, SerialException):
+            except (SerialException):
                 LOG.error("Error while reading serial port.")
 
             if _quit_after and _quit_after == telegram_count:
-                break                
+                break
