@@ -86,13 +86,11 @@ def setup_log(
     return logger
 
 
-def debug_q(q: queue.Queue) -> None:
+def debug_q(log: logging.Logger, q: queue.Queue) -> None:
     while True:
         if not q.empty():
             data = q.get()
-            print("*" * 80)
-            print(data)
-            print("*" * 80)
+            log.debug("Got a message for the queue: {}".format(data))
 
 
 def main() -> None:
@@ -127,12 +125,12 @@ def main() -> None:
     )
     serial_thread.start()
 
-    # log.info("Starting queue debuger.")
-    # q_thread = threading.Thread(
-    #     target=debug_q,
-    #     args=(msg_q,)
-    # )
-    # q_thread.start()
+    log.info("Starting queue debuger.")
+    q_thread = threading.Thread(
+        target=debug_q,
+        args=(log, msg_q)
+    )
+    q_thread.start()
 
 
 if __name__ == "__main__":
