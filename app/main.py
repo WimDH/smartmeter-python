@@ -127,7 +127,8 @@ def main() -> None:
 
     log.info("Starting queue debuger.")
     q_thread = threading.Thread(
-        target=debug_q
+        target=debug_q,
+        args=(msg_q)
     )
     q_thread.start()
 
