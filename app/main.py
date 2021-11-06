@@ -8,11 +8,10 @@ import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
 import threading
-import queue
 from app.digimeter import read_serial
 
 
-def convert_from_human_readable(value: Union[str, int]) -> int:
+def convert_from_human_readable(value):
     """
     Converts human raedable formats to an integer.
     Supports only filesizes for the moment (1k = 1024 bytes).
