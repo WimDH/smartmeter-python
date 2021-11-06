@@ -11,7 +11,7 @@ import threading
 from app.digimeter import read_serial
 
 
-def convert_from_human_readable(value):
+def convert_from_human_readable(value: Union[str, int]) -> int:
     """
     Converts human raedable formats to an integer.
     Supports only filesizes for the moment (1k = 1024 bytes).
