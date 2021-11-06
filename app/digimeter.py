@@ -104,8 +104,8 @@ def read_serial(
     with serial.Serial(
         port, baudrate, bytesize, parity, stopbits, timeout=5
     ) as serial_port:
-        try:
-            LOG.debug(f"Reading from serial port '{port}'.")
+        LOG.debug(f"Reading from serial port '{port}'.")
+        while True:
             while serial_port.inWaiting() > 0:
                 try:
                     # Read data from port
