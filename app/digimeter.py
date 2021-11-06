@@ -62,16 +62,21 @@ def check_msg(raw_msg: str) -> bool:
     Return True
     """
     # Find the end of message character '!'
-    pos = raw_msg.find(b"!")
-    data = raw_msg[: pos + 1]
-    provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
-    calculated_crc = hex(Crc16Lha.calc(data))
-    crc_match = calculated_crc == provided_crc
-    if crc_match:
-        LOG.debug("Telegram has a valid CRC.")
-    else:
-        LOG.warning("Telegram has an invalid CRC!")
-    return crc_match
+    try:
+        pos = raw_msg.find(b"!")
+        data = raw_msg[: pos + 1]
+        provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
+        calculated_crc = hex(Crc16Lha.calc(data))
+        crc_match = calculated_crc == provided_crc
+        if crc_match:
+            LOG.debug("Telegram has a valid CRC.")
+        else:
+            LOG.warning("Telegram has an invalid CRC!")
+        return crc_match
+
+    except ValueError:
+        # return False if we could not calculate the CRC.
+        return False
 
 
 def read_serial(
