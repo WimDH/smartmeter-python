@@ -135,5 +135,5 @@ def read_serial(
                     if _quit_after and _quit_after == telegram_count:
                         break
                 
-                except SerialException:
+                except (OSError, SerialException):
                     pass
