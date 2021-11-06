@@ -138,10 +138,11 @@ def read_serial(
                 if _quit_after and _quit_after == telegram_count:
                     break
 
-        except SerialException:
+        except SerialException as se:
             LOG.critical(
                 f"Unable to configure serial port '{port}' with settings '{baudrate},{bytesize},{parity},{stopbits}'."
             )
+            LOG.exception(se)
 
         finally:
             if serial_port:
