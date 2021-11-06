@@ -80,7 +80,7 @@ def check_msg(raw_msg: str) -> bool:
 
 
 def read_serial(
-    queue: Queue,
+    msg_q: Queue,
     port: str,
     baudrate: int,
     bytesize: int,
@@ -133,7 +133,7 @@ def read_serial(
                         LOG.debug("Parsing telegram.")
                         queue_data = parse(telegram.decode())
                         LOG.debug("Add parsed data to the queue.")
-                        queue.put(queue_data)
+                        msg_q.put(queue_data)
 
                 if _quit_after and _quit_after == telegram_count:
                     break
