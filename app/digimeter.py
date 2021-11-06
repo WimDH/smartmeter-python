@@ -142,3 +142,8 @@ def read_serial(
             LOG.critical(
                 f"Unable to configure serial port '{port}' with settings '{baudrate},{bytesize},{parity},{stopbits}'."
             )
+
+        finally:
+            if serial_port:
+                serial_port.flush()
+                serial_port.close()
