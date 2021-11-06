@@ -107,35 +107,33 @@ def read_serial(
         LOG.debug(f"Reading from serial port '{port}'.")
         while True:
             try:
-                while serial_port.inWaiting() > 0:
-                    # Read data from port
-                    line = serial_port.readline()
+                # Read data from port
+                line = serial_port.readline()
 
-                    if start_of_telegram.search(line.decode("ascii")):  # Start of message
-                        LOG.debug("Start of message deteced.")
-                        telegram = bytearray()
-                        start_of_telegram_detected = True
+                if start_of_telegram.search(line.decode("ascii")):  # Start of message
+                    LOG.debug("Start of message deteced.")
+                    telegram = bytearray()
+                    start_of_telegram_detected = True
 
-                    if start_of_telegram_detected:
-                        telegram += line
+                if start_of_telegram_detected:
+                    telegram += line
 
-                    if end_of_telegram.search(line.decode("ascii")):  # End of message
-                        LOG.debug("End of message deteced")
-                        telegram_count += 1
-                        start_of_telegram_detected = False
-                        LOG.debug("Recorded a new telegram:{}". format(telegram.decode("ascii")))
+                if end_of_telegram.search(line.decode("ascii")):  # End of message
+                    LOG.debug("End of message deteced")
+                    telegram_count += 1
+                    start_of_telegram_detected = False
+                    LOG.debug("Recorded a new telegram:{}". format(telegram.decode("ascii")))
 
-                        if check_msg(telegram):
-                            # If the CRC is correct, add it to the queue.
-                            LOG.debug("Parsing telegram.")
-                            queue_data = parse(telegram.decode())
-                            LOG.debug("Add parsed data to the queue.")
-                            msg_q.put(queue_data)
-
-                    if _quit_after and _quit_after == telegram_count:
-                        break
+                    if check_msg(telegram):
+                        # If the CRC is correct, add it to the queue.
+                        LOG.debug("Parsing telegram.")
+                        queue_data = parse(telegram.decode())
+                        LOG.debug("Add parsed data to the queue.")
+                        msg_q.put(queue_data)
 
             except (OSError, SerialException):
                 LOG.error("Error while reading serial port.")
                 serial_port.flush()
-                
+
+            if _quit_after and _quit_after == telegram_count:
+                break                
