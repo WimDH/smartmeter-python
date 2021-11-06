@@ -121,7 +121,7 @@ def read_serial(
                     LOG.debug("End of message deteced")
                     telegram_count += 1
                     start_of_telegram_detected = False
-                    LOG.debug("Recorded a new telegram:\n{}". format(telegram.decode("ascii")))
+                    LOG.debug("Recorded a new telegram:{}". format(telegram.decode("ascii")))
 
                     if check_msg(telegram):
                         # If the CRC is correct, add it to the queue.

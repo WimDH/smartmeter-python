@@ -86,11 +86,13 @@ def setup_log(
     return logger
 
 
-def debug_q(q):
+def debug_q(q: queue.Queue) -> None:
     while True:
         if not q.empty():
             data = q.get()
+            print("*" * 80)
             print(data)
+            print("*" * 80)
 
 
 def main() -> None:
