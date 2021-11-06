@@ -134,6 +134,7 @@ def read_serial(
 
                     if _quit_after and _quit_after == telegram_count:
                         break
-                
+
                 except (OSError, SerialException):
-                    pass
+                    serial_port.flush()
+                    
