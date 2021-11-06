@@ -133,7 +133,6 @@ def read_serial(
 
             except (OSError, SerialException):
                 LOG.error("Error while reading serial port.")
-                serial_port.flush()
 
             if _quit_after and _quit_after == telegram_count:
                 break                
