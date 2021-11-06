@@ -127,12 +127,12 @@ def main() -> None:
     )
     serial_thread.start()
 
-    log.info("Starting queue debuger.")
-    q_thread = threading.Thread(
-        target=debug_q,
-        args=(msg_q)
-    )
-    q_thread.start()
+    # log.info("Starting queue debuger.")
+    # q_thread = threading.Thread(
+    #     target=debug_q,
+    #     args=(msg_q,)
+    # )
+    # q_thread.start()
 
 
 if __name__ == "__main__":
