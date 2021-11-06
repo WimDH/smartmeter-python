@@ -136,5 +136,6 @@ def read_serial(
                         break
 
                 except (OSError, SerialException):
+                    LOG.error("Error while reading serial port.")
                     serial_port.flush()
                     
