@@ -106,8 +106,8 @@ def read_serial(
     ) as serial_port:
         LOG.debug(f"Reading from serial port '{port}'.")
         while True:
-            while serial_port.inWaiting() > 0:
-                try:
+            try:
+                while serial_port.inWaiting() > 0:
                     # Read data from port
                     line = serial_port.readline()
 
@@ -135,7 +135,7 @@ def read_serial(
                     if _quit_after and _quit_after == telegram_count:
                         break
 
-                except (OSError, SerialException):
-                    LOG.error("Error while reading serial port.")
-                    serial_port.flush()
-                    
+            except (OSError, SerialException):
+                LOG.error("Error while reading serial port.")
+                serial_port.flush()
+                
