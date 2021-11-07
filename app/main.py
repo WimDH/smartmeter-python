@@ -98,8 +98,8 @@ def dispatcher(log: logging.Logger, q: mp.Queue, influx_db: InfluxDBClient) -> N
             data = q.get()
             log.debug("Got a message for the queue: {}".format(data))
             influx_db.write(data)
-            sleep(0.2)
-
+        else:
+            sleep(0.1)
 
 
 def main() -> None:
