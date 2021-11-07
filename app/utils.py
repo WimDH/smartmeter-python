@@ -1,6 +1,6 @@
 from typing import Dict
 from datetime import datetime, timedelta
-import dateutil
+from dateutil import parser as dateutil_parser
 import re
 from logging import getLogger
 
@@ -45,7 +45,7 @@ def calculate_timestamp_drift(ts_type: str, iso_8601_timestamp: str) -> int:
     Log a warning message when the drift is more than one minute.
     """
     local_timestamp = datetime.now().astimezone()
-    telegram_timestamp = dateutil.parser.parse(iso_8601_timestamp)
+    telegram_timestamp = dateutil_parser.parse(iso_8601_timestamp)
     delta_seconds = int((local_timestamp - telegram_timestamp).total_seconds())
     delta_human_readable = "{:0>8}".format(str(timedelta(seconds=delta_seconds)))
 
