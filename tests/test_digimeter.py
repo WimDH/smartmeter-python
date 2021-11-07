@@ -1,7 +1,6 @@
 import os
 import sys
 import pathlib
-from types import GeneratorType
 import pytest
 import re
 from typing import List
@@ -25,20 +24,20 @@ def msg_stream() -> BytesIO:
     Reads the file meter_stream, which contains multiple messages. Returns a ByteIO instance.
     Also re-calculate the CRC because we anonimized the serial numbers and ID in the testdata.
     """
-    data: bytearray = bytearray()           # Main data container
-    telegram: bytearray = bytearray()       # Container for one telegram
+    data: bytearray = bytearray()  # Main data container
+    telegram: bytearray = bytearray()  # Container for one telegram
     detected_telegram_start: bool = False
 
     with open("tests/testdata/meter_stream.txt", "r") as fh:
         for line in fh.readlines():
             # The data coming from the meter has a M$ style newline.
             line = re.sub(b"\n", b"\r\n", line.encode("ascii"))
-            
+
             # Create new telegram at the start of a telegram.
-            if line.startswith(b'/FLU'):
+            if line.startswith(b"/FLU"):
                 telegram = bytearray()
                 detected_telegram_start = True
-            
+
             if detected_telegram_start and not line.startswith(b"!AAAA"):
                 telegram += line
 
@@ -65,6 +64,8 @@ def test_parse_message(one_msg):
     """Test parsing of one message coming from the meter."""
     msg = parse(one_msg)
 
+    assert isinstance(msg["local_timestamp"], str)
+    assert msg["timestamp"] == "211024195235S"
     assert msg["total_consumption_day"] == 4248.198
     assert msg["total_consumption_night"] == 6615.642
     assert msg["total_injection_day"] == 2278.958
@@ -85,7 +86,7 @@ def test_parse_message(one_msg):
     assert msg["l2_current"] == 1.94
     assert msg["l3_current"] == 1.65
     assert msg["total_gas_consumption"] == 3775.342
-    assert msg["gas_last_timestamp"] == 211024195005
+    assert msg["gas_timestamp"] == "211024195005S"
 
 
 def test_autoformat():
@@ -100,12 +101,13 @@ def test_read_serial(monkeypatch, msg_stream):
     Test the main loop. It reads data from the serial port.
     todo: improve test by checking content of the queue.
     """
+
     def mock_stream(*args, **kwargs):
         return msg_stream
 
     monkeypatch.setattr(serial, "Serial", mock_stream)
     q = Queue()
-    read_serial(q, "com1", 2400, 8, 'N', 1, _quit_after=2)
+    read_serial(q, "com1", 2400, 8, "N", 1, _quit_after=2)
 
     assert q.empty() is False
 

@@ -5,10 +5,12 @@ from logging import getLogger
 from typing import Optional
 from serial.serialutil import SerialException
 from queue import Queue
+from datetime import datetime
 
 LOG = getLogger(".")
 FIELDS = [
     # (Field name, dictionary key, start position, end position)
+    ("0-0:1.0.0", "timestamp", 10, 23),
     ("1-0:1.8.1", "total_consumption_day", 10, 20),
     ("1-0:1.8.2", "total_consumption_night", 10, 20),
     ("1-0:2.8.1", "total_injection_day", 10, 20),
@@ -29,7 +31,7 @@ FIELDS = [
     ("1-0:51.7.0", "l2_current", 11, 17),
     ("1-0:71.7.0", "l3_current", 11, 17),
     ("0-1:24.2.3", "total_gas_consumption", 26, 35),
-    ("0-1:24.2.3", "gas_last_timestamp", 11, 23),
+    ("0-1:24.2.3", "gas_timestamp", 11, 24),
 ]
 
 
@@ -45,7 +47,7 @@ def autoformat(value):
 
 def parse(raw_msg):
     """Parse the raw message."""
-    msg = {}
+    msg = {"local_timestamp": datetime.now().isoformat()}
 
     for line in raw_msg.strip().splitlines():
         for (code, key, start, end) in FIELDS:
@@ -122,7 +124,9 @@ def read_serial(
                     LOG.debug("End of message deteced")
                     telegram_count += 1
                     start_of_telegram_detected = False
-                    LOG.debug("Recorded a new telegram:{}". format(telegram.decode("ascii")))
+                    LOG.debug(
+                        "Recorded a new telegram:{}".format(telegram.decode("ascii"))
+                    )
 
                     if check_msg(telegram):
                         # If the CRC is correct, add it to the queue.

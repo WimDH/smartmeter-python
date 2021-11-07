@@ -1,3 +1,4 @@
 pyserial==3.5       
 crccheck==1.0
 coloredlogs==15.0.1
+influxdb==5.3.1

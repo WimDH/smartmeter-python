@@ -86,7 +86,7 @@ def setup_log(
     return logger
 
 
-def debug_q(log: logging.Logger, q: queue.Queue) -> None:
+def dispatcher(log: logging.Logger, q: queue.Queue) -> None:
     while True:
         if not q.empty():
             data = q.get()
@@ -105,7 +105,7 @@ def main() -> None:
         log_to_stdout=config["logging"]["log_to_stdout"],
         keep=config["logging"]["keep"],
         size=config["logging"]["size"],
-        loglevel=config["logging"]["loglevel"]
+        loglevel=config["logging"]["loglevel"],
     )
     log.info("---start---")
 
@@ -120,16 +120,13 @@ def main() -> None:
             int(config["serial"]["baudrate"]),
             int(config["serial"]["bytesize"]),
             config["serial"]["parity"],
-            int(config["serial"]["stopbits"])
-        )
+            int(config["serial"]["stopbits"]),
+        ),
     )
     serial_thread.start()
 
-    log.info("Starting queue debuger.")
-    q_thread = threading.Thread(
-        target=debug_q,
-        args=(log, msg_q)
-    )
+    log.info("Starting dispatcher thread.")
+    q_thread = threading.Thread(target=dispatcher, args=(log, msg_q))
     q_thread.start()
 
 
