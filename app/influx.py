@@ -1,6 +1,6 @@
 import influxdb
 from logging import getLogger
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 LOG = getLogger(".")
 
@@ -69,8 +69,15 @@ class DbInflux:
         e_data, g_data = self.craft_json(data)
         status: List = []
 
-        for measurement, data in [('Electricity', e_data), ('Gas', g_data)]:
-            if self.conn.write_points([data, ]) is True:
+        for measurement, data in [("Electricity", e_data), ("Gas", g_data)]:
+            if (
+                self.conn.write_points(
+                    [
+                        data,
+                    ]
+                )
+                is True
+            ):
                 LOG.debug(f"{measurement} data point successfully written: {data}")
                 status.append(True)
             else:
@@ -80,11 +87,11 @@ class DbInflux:
         return status
 
     @staticmethod
-    def craft_json(data) -> Dict:
-        """
-        Create a valid JSON for the influxDB out of the data we got.
-        """
-        # Process electricity data.
+    def craft_json(data: Dict) -> Tuple[Dict]:
+        """Create a valid JSON for the influxDB out of the data we got."""
+        LOG.debug("Crafting Influx JSON datapoints.")
+
+        # Electricity data.
         e_data = {
             "measurement": "electricity",
             "tags": {},
@@ -96,7 +103,9 @@ class DbInflux:
             },
         }
 
-        # Process gas data.
+        LOG.debug(f"Electricity data point: {e_data}")
+
+        # Gas data.
         g_data = {
             "measurement": "gas",
             "tags": {},
@@ -107,5 +116,7 @@ class DbInflux:
                 if ("timestamp" not in key and "gas" in key)
             },
         }
+
+        LOG.debug(f"Gas data point: {g_data}")
 
         return (e_data, g_data)
