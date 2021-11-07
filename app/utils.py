@@ -1,6 +1,6 @@
 from typing import Dict
-import dateutil
 from datetime import datetime, timedelta
+import dateutil
 import re
 from logging import getLogger
 
@@ -34,7 +34,7 @@ def convert_timestamp(timestamp: str) -> str:
 
     iso8601_timestamp = f"{year}-{month}-{day}T{hour}:{minute}:{second}+{tz}"
 
-    LOG.debug("Converted timestamp from {}  to {}".format(timestamp, iso8601_timestamp))
+    LOG.debug("Converted timestamp from {} to {}".format(timestamp, iso8601_timestamp))
 
     return iso8601_timestamp
 
