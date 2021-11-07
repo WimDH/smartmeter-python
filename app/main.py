@@ -114,12 +114,28 @@ def main() -> None:
     )
     log.info("---start---")
 
-    log.info("Setup connection for InfluxDB.")
-    db = DbInflux()
+    log.info(
+        "Setup connection for InfluxDB for database '{}' on host '{}'.".format(
+            config["influx"]["database"], config["influx"]["hostname"]
+        )
+    )
+    db = DbInflux(
+        host=config["influx"]["hostname"],
+        port=int(config["influx"]["port"]),
+        ssl=config.getboolean("influx", "ssl"),
+        verify_ssl=config.getboolean("influx", "verify_ssl"),
+        database=config["influx"]["database"],
+        username=config["influx"]["username"],
+        password=config["influx"]["password"],
+    )
 
     msg_q = queue.Queue()
 
-    log.info("Starting serial port reader thread.")
+    log.info(
+        "Starting serial port reader thread on port '{}'.".format(
+            config["serial"]["port"]
+        )
+    )
     serial_thread = threading.Thread(
         target=read_serial,
         args=(

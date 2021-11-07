@@ -1,6 +1,6 @@
 import influxdb
 from logging import getLogger
-from typing import Dict
+from typing import Dict, List
 
 LOG = getLogger(".")
 
@@ -20,7 +20,11 @@ def convert_timestamp(timestamp: str) -> str:
     second: str = timestamp[10:12]
     tz: str = tz_map[timestamp[-1]]
 
-    return f"{year}-{month}-{day}T{hour}:{minute}:{second}+{tz}"
+    iso8601_timestamp = f"{year}-{month}-{day}T{hour}:{minute}:{second}+{tz}"
+
+    LOG.debug("Converted timestamp from {}  to {}".format(timestamp, iso8601_timestamp))
+
+    return iso8601_timestamp
 
 
 class DbInflux:
@@ -63,30 +67,23 @@ class DbInflux:
     def write(self, data: Dict) -> None:
         """write a telegram to influx."""
         e_data, g_data = self.craft_json(data)
-        e_result = True
-        g_result = True
+        status: List = []
 
-        if (self.conn.write_points([e_data, ]) is True):
-            LOG.debug(f"Electricity data point successfully written: {e_data}")
-        else:
-            LOG.warning("Electricity data point not written: {e_data}")
-            e_result = False
+        for measurement, data in [('Electricity', e_data), ('Gas', g_data)]:
+            if self.conn.write_points([data, ]) is True:
+                LOG.debug(f"{measurement} data point successfully written: {data}")
+                status.append(True)
+            else:
+                LOG.warning(f"{measurement} data point not written: {data}")
+                status.append(False)
 
-        if (self.conn.write_points([g_data, ]) is True):
-            LOG.debug(f"Gas data point successfully written: {g_data}")
-        else:
-            LOG.warning("Gas data point not written: {g_data}")
-            g_result = False
-
-        return e_result, g_result
+        return status
 
     @staticmethod
     def craft_json(data) -> Dict:
         """
         Create a valid JSON for the influxDB out of the data we got.
         """
-        e_data = {}
-        g_data = {}
         # Process electricity data.
         e_data = {
             "measurement": "electricity",
