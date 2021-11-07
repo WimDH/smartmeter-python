@@ -1,5 +1,4 @@
 from crccheck.crc import Crc16Lha
-import dateutil
 import serial
 import re
 from logging import getLogger
@@ -7,6 +6,8 @@ from typing import Optional
 from serial.serialutil import SerialException
 from queue import Queue
 from datetime import datetime
+from app.utils import convert_timestamp, calculate_timestamp_drift, autoformat
+
 
 LOG = getLogger(".")
 FIELDS = [
@@ -36,18 +37,11 @@ FIELDS = [
 ]
 
 
-def autoformat(value):
-    """Convert to str, int or float, based on the content."""
-    if re.match(r"^\d+$", value):
-        return int(value)
-    if re.match(r"\d+\.\d+", value):
-        return float(value)
-
-    return str(value)
-
-
 def parse(raw_msg):
     """Parse the raw message."""
+
+    LOG.debug("Parsing a raw telegram.")
+
     msg = {"local_timestamp": datetime.now().isoformat()}
 
     for line in raw_msg.strip().splitlines():
@@ -136,9 +130,9 @@ def read_serial(
 
                     if check_msg(telegram):
                         # If the CRC is correct, add it to the queue.
-                        LOG.debug("Parsing telegram.")
                         queue_data = parse(telegram.decode())
-                        LOG.debug("Add parsed data to the queue.")
+                        calculate_timestamp_drift(convert_timestamp(queue_data.get('timestamp')))
+                        LOG.debug("Adding parsed data to the queue.")
                         msg_q.put(queue_data)
 
             except (SerialException):
