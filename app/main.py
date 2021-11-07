@@ -10,6 +10,7 @@ import multiprocessing as mp
 from influxdb.client import InfluxDBClient
 from app.digimeter import read_serial
 from app.influx import DbInflux
+from time import sleep
 
 
 def convert_from_human_readable(value: Union[str, int]) -> int:
@@ -97,6 +98,8 @@ def dispatcher(log: logging.Logger, q: mp.Queue, influx_db: InfluxDBClient) -> N
             data = q.get()
             log.debug("Got a message for the queue: {}".format(data))
             influx_db.write(data)
+            sleep(0.2)
+
 
 
 def main() -> None:
