@@ -8,6 +8,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
 import threading
+
+from influxdb.client import InfluxDBClient
 from app.digimeter import read_serial
 from app.influx import DbInflux
 
@@ -87,7 +89,8 @@ def setup_log(
     return logger
 
 
-def dispatcher(log: logging.Logger, q: queue.Queue, influx_db) -> None:
+def dispatcher(log: logging.Logger, q: queue.Queue, influx_db: InfluxDBClient) -> None:
+    """A dispatcher function that sends the messages to an InfluxDB and controls the relay."""
 
     influx_db.connect()
 

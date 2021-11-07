@@ -1,6 +1,9 @@
 import influxdb
 from logging import getLogger
 from typing import Dict, List, Tuple
+import dateutil
+from datetime import datetime, timedelta
+import pytz
 
 LOG = getLogger(".")
 
@@ -25,6 +28,26 @@ def convert_timestamp(timestamp: str) -> str:
     LOG.debug("Converted timestamp from {}  to {}".format(timestamp, iso8601_timestamp))
 
     return iso8601_timestamp
+
+
+def calculate_timestamp_drift(ts_type: str, iso_8601_timestamp: str) -> int:
+    """
+    Calculates the drift between the system time and the telegram timestamp.
+    Log a warning message when the drift is more than one minute.
+    """
+    local_timestamp = datetime.now().astimezone()
+    telegram_timestamp = dateutil.parser.parse(iso_8601_timestamp)
+    delta_seconds = int((local_timestamp - telegram_timestamp).total_seconds())
+    delta_human_readable = "{:0>8}".format(str(timedelta(seconds=delta_seconds)))
+
+    log_msg = f"Timestamp for {ts_type} drift is: {delta_human_readable}."
+
+    if delta_seconds < 60:
+        LOG.debug(log_msg)
+    else:
+        LOG.warning(log_msg)
+
+    return delta_seconds
 
 
 class DbInflux:
@@ -70,6 +93,10 @@ class DbInflux:
         status: List = []
 
         for measurement, data in [("Electricity", e_data), ("Gas", g_data)]:
+
+            # calculating if we are not drifting to far from the actual timestamp.
+            _ = calculate_timestamp_drift(measurement, data.get("time"))
+
             if (
                 self.conn.write_points(
                     [

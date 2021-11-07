@@ -1,4 +1,5 @@
 from crccheck.crc import Crc16Lha
+import dateutil
 import serial
 import re
 from logging import getLogger

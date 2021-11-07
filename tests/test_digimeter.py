@@ -121,8 +121,3 @@ def test_check_msg(one_msg):
     """
     msg = re.sub(b"\n", b"\r\n", one_msg.encode("ascii"))
     assert check_msg(msg) is True
-
-
-def test_timestamp_drift():
-    """Test the calculation if the timestamp drift between the local time and the telegram timestamp."""
-    assert True
