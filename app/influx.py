@@ -101,7 +101,7 @@ class DbInflux:
 
         # Process gas data.
         g_data = {
-            "measurement": "electricity",
+            "measurement": "gas",
             "tags": {},
             "time": convert_timestamp(data.get("gas_timestamp")),
             "fields": {
