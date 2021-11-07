@@ -6,7 +6,7 @@
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 
 default:
-  image: python:3.8.10
+  image: python:3.7
 
 stages:
   - test
