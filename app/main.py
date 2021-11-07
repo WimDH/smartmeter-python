@@ -110,8 +110,8 @@ def main() -> None:
     config = load_config(args.configfile)
     log = setup_log(
         filename=config["logging"]["logfile"],
-        log_to_stdout=config["logging"]["log_to_stdout"],
-        keep=config["logging"]["keep"],
+        log_to_stdout=config.getboolean("logging", "log_to_stdout"),
+        keep=int(config["logging"]["keep"]),
         size=config["logging"]["size"],
         loglevel=config["logging"]["loglevel"],
     )
