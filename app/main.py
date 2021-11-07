@@ -9,6 +9,7 @@ from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
 import threading
 from app.digimeter import read_serial
+from app.influx import DbInflux
 
 
 def convert_from_human_readable(value: Union[str, int]) -> int:
@@ -86,11 +87,15 @@ def setup_log(
     return logger
 
 
-def dispatcher(log: logging.Logger, q: queue.Queue) -> None:
+def dispatcher(log: logging.Logger, q: queue.Queue, influx_db) -> None:
+
+    influx_db.connect()
+
     while True:
         if not q.empty():
             data = q.get()
             log.debug("Got a message for the queue: {}".format(data))
+            influx_db.write(data)
 
 
 def main() -> None:
@@ -109,6 +114,9 @@ def main() -> None:
     )
     log.info("---start---")
 
+    log.info("Setup connection for InfluxDB.")
+    db = DbInflux()
+
     msg_q = queue.Queue()
 
     log.info("Starting serial port reader thread.")
@@ -126,7 +134,7 @@ def main() -> None:
     serial_thread.start()
 
     log.info("Starting dispatcher thread.")
-    q_thread = threading.Thread(target=dispatcher, args=(log, msg_q))
+    q_thread = threading.Thread(target=dispatcher, args=(log, msg_q, db))
     q_thread.start()
 
 
