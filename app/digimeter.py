@@ -9,6 +9,8 @@ from datetime import datetime
 from app.utils import convert_timestamp, calculate_timestamp_drift, autoformat
 
 
+LOG = getLogger(".")
+
 FIELDS = [
     # (Field name, dictionary key, start position, end position)
     ("0-0:1.0.0", "timestamp", 10, 23),
@@ -38,8 +40,7 @@ FIELDS = [
 
 def parse(raw_msg):
     """Parse the raw message."""
-    log = getLogger(".")
-    log.debug("Parsing a raw telegram.")
+    LOG.debug("Parsing a raw telegram.")
 
     msg = {"local_timestamp": datetime.now().isoformat()}
 
@@ -57,9 +58,8 @@ def check_msg(raw_msg: str) -> bool:
     The provided CRC should be the same as the calculated one.
     Return True
     """
-    log = getLogger(".")
     # Find the end of message character '!'
-    log.debug("Checking CRC of message. Message length is {}.".format(len(raw_msg)))
+    LOG.debug("Checking CRC of message. Message length is {}.".format(len(raw_msg)))
     pos = raw_msg.find(b"!")
     data = raw_msg[: pos + 1]
 
@@ -71,9 +71,9 @@ def check_msg(raw_msg: str) -> bool:
 
     crc_match = calculated_crc == provided_crc
     if crc_match:
-        log.debug("Telegram has a valid CRC.")
+        LOG.debug("Telegram has a valid CRC.")
     else:
-        log.warning("Telegram has an invalid CRC!")
+        LOG.warning("Telegram has an invalid CRC!")
     return crc_match
 
 
@@ -92,7 +92,6 @@ def read_serial(
 
     _quit_after is only used during testing to break the infinite loop while reading from the serial port.
     """
-    log = getLogger(".")
     telegram_count: int = 0
     line: bytes
     start_of_telegram_detected: bool = False
@@ -100,21 +99,21 @@ def read_serial(
     start_of_telegram = re.compile(r"^\/FLU\d{1}\\")
     end_of_telegram = re.compile(r"^![A-Z0-9]{4}")
 
-    log.debug(
+    LOG.debug(
         f"Open serial port '{port}' with settings '{baudrate},{bytesize},{parity},{stopbits}'."
     )
 
     with serial.Serial(
         port, baudrate, bytesize, parity, stopbits, timeout=5
     ) as serial_port:
-        log.debug(f"Reading from serial port '{port}'.")
+        LOG.debug(f"Reading from serial port '{port}'.")
         while True:
             try:
                 # Read data from port
                 line = serial_port.readline()
 
                 if start_of_telegram.search(line.decode("ascii")):  # Start of message
-                    log.debug("Start of message deteced.")
+                    LOG.debug("Start of message deteced.")
                     telegram = bytearray()
                     start_of_telegram_detected = True
 
@@ -122,10 +121,10 @@ def read_serial(
                     telegram += line
 
                 if end_of_telegram.search(line.decode("ascii")):  # End of message
-                    log.debug("End of message deteced")
+                    LOG.debug("End of message deteced")
                     telegram_count += 1
                     start_of_telegram_detected = False
-                    log.debug(
+                    LOG.debug(
                         "Recorded a new telegram:{}".format(telegram.decode("ascii"))
                     )
 
@@ -133,11 +132,11 @@ def read_serial(
                         # If the CRC is correct, add it to the queue.
                         queue_data = parse(telegram.decode())
                         calculate_timestamp_drift(convert_timestamp(queue_data.get('timestamp')))
-                        log.debug("Adding parsed data to the queue.")
+                        LOG.debug("Adding parsed data to the queue.")
                         msg_q.put(queue_data)
 
             except (SerialException):
-                log.error("Error while reading serial port.")
+                LOG.error("Error while reading serial port.")
 
             if _quit_after and _quit_after == telegram_count:
                 break
