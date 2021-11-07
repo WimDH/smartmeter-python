@@ -67,8 +67,13 @@ def check_msg(raw_msg: str) -> bool:
     LOG.debug("Checking CRC of message. Message length is {}.".format(len(raw_msg)))
     pos = raw_msg.find(b"!")
     data = raw_msg[: pos + 1]
-    provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
-    calculated_crc = hex(Crc16Lha.calc(data))
+
+    try:
+        provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
+        calculated_crc = hex(Crc16Lha.calc(data))
+    except ValueError:
+        provided_crc = 0x0
+
     crc_match = calculated_crc == provided_crc
     if crc_match:
         LOG.debug("Telegram has a valid CRC.")

@@ -66,7 +66,7 @@ def test_craft_json(valid_input_data) -> None:
         },
     }
     g_result = {
-        "measurement": "electricity",
+        "measurement": "gas",
         "tags": {},
         "time": "2021-10-24T19:50:05+02:00",
         "fields": {"total_gas_consumption": 3775.342},
