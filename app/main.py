@@ -2,13 +2,11 @@ import sys
 import os
 import argparse
 import configparser
-import queue
 from typing import List, Union
 import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
-import threading
-
+import multiprocessing as mp
 from influxdb.client import InfluxDBClient
 from app.digimeter import read_serial
 from app.influx import DbInflux
@@ -89,7 +87,7 @@ def setup_log(
     return logger
 
 
-def dispatcher(log: logging.Logger, q: queue.Queue, influx_db: InfluxDBClient) -> None:
+def dispatcher(log: logging.Logger, q: mp.Queue, influx_db: InfluxDBClient) -> None:
     """A dispatcher function that sends the messages to an InfluxDB and controls the relay."""
 
     influx_db.connect()
@@ -132,14 +130,14 @@ def main() -> None:
         password=config["influx"]["password"],
     )
 
-    msg_q = queue.Queue()
+    msg_q = mp.Queue()
 
     log.info(
         "Starting serial port reader thread on port '{}'.".format(
             config["serial"]["port"]
         )
     )
-    serial_thread = threading.Thread(
+    serial_process = mp.Process(
         target=read_serial,
         args=(
             msg_q,
@@ -150,12 +148,13 @@ def main() -> None:
             int(config["serial"]["stopbits"]),
         ),
     )
-    serial_thread.start()
+    serial_process.start()
 
     log.info("Starting dispatcher thread.")
-    q_thread = threading.Thread(target=dispatcher, args=(log, msg_q, db))
-    q_thread.start()
+    dispatcher_process = mp.Process(target=dispatcher, args=(log, msg_q, db))
+    dispatcher_process.start()
 
 
 if __name__ == "__main__":
+    mp.set_start_method("spawn")
     main()
