@@ -32,10 +32,12 @@ pytest:
 
 mypy:
   stage: linting
+  allow_failure: true
   script:
     - mypy --ignore-missing-imports app/ tests/ setup.py
 
 flake8:
   stage: linting
+  allow_failure: true
   script:
     - flake8 app/ tests/ setup.py
