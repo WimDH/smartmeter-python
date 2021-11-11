@@ -12,6 +12,10 @@ image: python:3.7
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
+stages:
+  - linting
+  - testing
+
 before_script:
   - python -V  # Print out python version for debugging
   - pip install virtualenv
@@ -22,9 +26,16 @@ before_script:
   - pip install -r requirements.dev.txt
 
 pytest:
+  stage: testing
   script:
     - pytest tests --junitxml=report.xml
 
 mypy:
+  stage: linting
   script:
     - mypy --ignore-missing-imports app/ tests/ setup.py
+
+flake8:
+  stage: linting
+  script:
+    - flake8 app/ tests/ setup.py
