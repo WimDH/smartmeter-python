@@ -42,3 +42,10 @@ flake8:
   allow_failure: true
   script:
     - flake8 app/ tests/ setup.py
+
+sast:
+  stage: linting
+  allow_failure: true
+
+include:
+- template: Security/SAST.gitlab-ci.yml
