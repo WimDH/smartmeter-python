@@ -1,6 +1,6 @@
 import pytest
 from app.influx import convert_timestamp, DbInflux, calculate_timestamp_drift
-from datetime import datetime, timedelta, tzinfo
+
 
 @pytest.fixture
 def valid_input_data():
