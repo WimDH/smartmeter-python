@@ -17,6 +17,12 @@ def test_convert_from_human_readable(in_value, out_value) -> None:
     assert convert_from_human_readable(in_value) == out_value
 
 
+def test_convert_from_human_readable_fail() -> None:
+    """Test when the conversion fails."""
+    with pytest.raises(ValueError):
+        assert convert_from_human_readable("10m")
+
+
 @pytest.mark.parametrize(
     "in_value, out_value",
     [

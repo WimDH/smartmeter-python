@@ -80,9 +80,3 @@ def convert_from_human_readable(value: Union[str, int]) -> int:
         return int(value[:-1]) * (1024 ** power.get(value[-1], 0))
     else:
         raise ValueError(f"'{value}' is an unknown value.")
-
-
-def test_convert_from_human_readable_fail() -> None:
-    """Test when the conversion fails."""
-    with pytest.raises(ValueError):
-        assert convert_from_human_readable("10m")
