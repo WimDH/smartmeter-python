@@ -135,7 +135,10 @@ def read_serial(
                     if check_msg(telegram):
                         # If the CRC is correct, add it to the queue.
                         queue_data = parse(telegram.decode())
-                        calculate_timestamp_drift('Electricity', convert_timestamp(queue_data.get('timestamp')))
+                        calculate_timestamp_drift(
+                            "Electricity",
+                            convert_timestamp(queue_data.get("timestamp")),
+                        )
                         LOG.debug("Adding parsed data to the queue.")
                         msg_q.put(queue_data)
 

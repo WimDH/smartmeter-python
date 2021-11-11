@@ -1,5 +1,5 @@
 import pytest
-from app.utils import convert_from_human_readable, autoformat
+from app.utils import convert_from_human_readable, autoformat, calculate_timestamp_drift
 
 
 @pytest.mark.parametrize(
@@ -35,3 +35,11 @@ def test_convert_from_human_readable_fail() -> None:
 def test_autoformat(in_value, out_value) -> None:
     """Test the autoformat function."""
     assert autoformat(in_value) == out_value
+
+
+def test_calculate_timestamp_drift():
+    """Crappy test"""
+
+    result = calculate_timestamp_drift("tata", "2021-11-07T17:57:35+01:00")
+
+    assert result > 0

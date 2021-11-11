@@ -1,5 +1,5 @@
 import pytest
-from app.influx import convert_timestamp, DbInflux, calculate_timestamp_drift
+from app.influx import convert_timestamp, DbInflux
 
 
 @pytest.fixture
@@ -75,19 +75,3 @@ def test_craft_json(valid_input_data) -> None:
     result = DbInflux.craft_json(valid_input_data)
 
     assert result == (e_result, g_result)
-
-
-# def test_write_points(valid_input_data):
-#     db = DbInflux()
-#     db.connect()
-#     e_result, g_result = db.write(valid_input_data)
-
-#     assert (e_result, g_result) == (True, True)
-
-
-def test_calculate_timestamp_drift():
-    """"""
-
-    result = calculate_timestamp_drift("tata", "2021-11-07T17:57:35+01:00")
-
-    assert result > 0

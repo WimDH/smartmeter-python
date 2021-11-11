@@ -1,7 +1,7 @@
 import influxdb
 from logging import getLogger
 from typing import Dict, List, Tuple
-from app.utils import convert_timestamp, calculate_timestamp_drift
+from app.utils import convert_timestamp
 
 LOG = getLogger(".")
 
@@ -51,7 +51,10 @@ class DbInflux:
 
         (e_data, g_data) = self.craft_json(data)
 
-        for (measurement, measurement_data) in [("Electricity", e_data), ("Gas", g_data)]:
+        for (measurement, measurement_data) in [
+            ("Electricity", e_data),
+            ("Gas", g_data),
+        ]:
 
             if (
                 self.conn.write_points(
@@ -61,7 +64,9 @@ class DbInflux:
                 )
                 is True
             ):
-                LOG.debug(f"{measurement} data point successfully written: {measurement_data}")
+                LOG.debug(
+                    f"{measurement} data point successfully written: {measurement_data}"
+                )
                 status.append(True)
             else:
                 LOG.warning(f"{measurement} data point not written: {measurement_data}")
