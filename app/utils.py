@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Union
 from datetime import datetime, timedelta
 from dateutil import parser as dateutil_parser
 import re
@@ -7,12 +7,14 @@ from logging import getLogger
 LOG = getLogger(".")
 
 
-def autoformat(value):
+def autoformat(value: Union[str, int, float]) -> Union[str, int, float]:
     """Convert to str, int or float, based on the content."""
-    if re.match(r"^\d+$", value):
+    if type(value) == str and re.match(r"^\d+$", value):
         return int(value)
-    if re.match(r"\d+\.\d+", value):
+    if type(value) == str and re.match(r"\d+\.\d+", value):
         return float(value)
+    if type(value) == int or type(value) == float:
+        return value
 
     return str(value)
 
@@ -60,3 +62,27 @@ def calculate_timestamp_drift(ts_type: str, iso_8601_timestamp: str) -> int:
         LOG.warning(log_msg)
 
     return delta_seconds
+
+
+def convert_from_human_readable(value: Union[str, int]) -> int:
+    """
+    Converts human readable formats to an integer.
+    Supports only filesizes for the moment (1k = 1024 bytes).
+    k = kilo
+    M = mega
+    G = giga
+    """
+    power = {"k": 1, "M": 2, "G": 3}
+
+    if type(value) == int or (type(value) == str and value.isnumeric()):
+        return int(value)
+    elif type(value) == str and value[-1] in ["k", "M", "G"]:
+        return int(value[:-1]) * (1024 ** power.get(value[-1], 0))
+    else:
+        raise ValueError(f"'{value}' is an unknown value.")
+
+
+def test_convert_from_human_readable_fail() -> None:
+    """Test when the conversion fails."""
+    with pytest.raises(ValueError):
+        assert convert_from_human_readable("10m")

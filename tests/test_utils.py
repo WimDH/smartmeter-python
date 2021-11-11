@@ -1,0 +1,31 @@
+import pytest
+from app.utils import convert_from_human_readable, autoformat
+
+
+@pytest.mark.parametrize(
+    "in_value, out_value",
+    [
+        (1000, 1000),
+        ("1010", 1010),
+        ("10k", 10240),
+        ("10M", 10485760),
+        ("10G", 10737418240),
+    ],
+)
+def test_convert_from_human_readable(in_value, out_value) -> None:
+    """Test the conversion of ex. 10k to 10240."""
+    assert convert_from_human_readable(in_value) == out_value
+
+
+@pytest.mark.parametrize(
+    "in_value, out_value",
+    [
+        (1000, 1000),
+        ("aaa", "aaa"),
+        ("1010", 1010),
+        ("10.12", 10.12),
+    ],
+)
+def test_autoformat(in_value, out_value) -> None:
+    """Test the autoformat function."""
+    assert autoformat(in_value) == out_value

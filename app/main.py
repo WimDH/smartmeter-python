@@ -2,7 +2,7 @@ import sys
 import os
 import argparse
 import configparser
-from typing import List, Union
+from typing import List
 import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
@@ -10,26 +10,8 @@ import multiprocessing as mp
 from influxdb.client import InfluxDBClient
 from app.digimeter import read_serial
 from app.influx import DbInflux
+from app.utils import convert_from_human_readable
 from time import sleep
-
-
-def convert_from_human_readable(value: Union[str, int]) -> int:
-    """
-    Converts human readable formats to an integer.
-    Supports only filesizes for the moment (1k = 1024 bytes).
-    k = kilo
-    M = mega
-    G = giga
-    """
-    power = {"k": 1, "M": 2, "G": 3}
-
-    if type(value) == int or (type(value) == str and value.isnumeric()):
-        return int(value)
-    elif type(value) == str and value[-1] in ["k", "M", "G"]:
-        suffix: str = value[:-1]
-        return int(suffix) * (1024 ** power.get(suffix, 0))
-    else:
-        raise ValueError(f"'{value}' is an unknown value.")
 
 
 def parse_cli(cli_args: List) -> argparse.Namespace:
