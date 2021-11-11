@@ -3,7 +3,6 @@ import sys
 import pathlib
 import pytest
 import re
-from typing import List
 from crccheck.crc import Crc16Lha
 from io import BytesIO
 from queue import Queue
@@ -54,7 +53,7 @@ def msg_stream() -> BytesIO:
 
 
 @pytest.fixture
-def one_msg() -> List:
+def one_msg() -> str:
     """Load a single message from the testfile."""
     with open("tests/testdata/meter_output.txt", "r") as fh:
         return fh.read()

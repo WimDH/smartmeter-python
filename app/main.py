@@ -15,7 +15,7 @@ from time import sleep
 
 def convert_from_human_readable(value: Union[str, int]) -> int:
     """
-    Converts human raedable formats to an integer.
+    Converts human readable formats to an integer.
     Supports only filesizes for the moment (1k = 1024 bytes).
     k = kilo
     M = mega

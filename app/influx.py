@@ -28,7 +28,7 @@ class DbInflux:
         self.database = database
         self.username = username
         self.password = password
-        self.conn = None
+        self.conn
 
     def connect(self) -> None:
         """Connect to InfluxDB."""
@@ -43,10 +43,13 @@ class DbInflux:
             password=self.password,
         )
 
-    def write(self, data: Dict) -> None:
+    def write(self, data: Dict) -> List[bool]:
         """write a telegram to influx."""
-        e_data, g_data = self.craft_json(data)
+        e_data: Dict
+        g_data: Dict
         status: List = []
+
+        (e_data, g_data) = self.craft_json(data)
 
         for measurement, data in [("Electricity", e_data), ("Gas", g_data)]:
 
