@@ -39,6 +39,3 @@ pytest:
 mypy:
   script:
     - mypy --ignore-missing-imports .
-
-include:
-- template: Security/SAST.gitlab-ci.yml
