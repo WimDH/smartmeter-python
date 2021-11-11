@@ -31,7 +31,6 @@ pytest:
   script:
     - pytest tests --junitxml=report.xml
 
-
 mypy:
   stage: linting
   allow_failure: true
