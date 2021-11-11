@@ -17,13 +17,14 @@ stages:
   - testing
 
 before_script:
-  - python -V  # Print out python version for debugging
+  - python -V  # Print out python version for debugging.
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
   - pip install -U pip
   - pip install -r requirements.txt
   - pip install -r requirements.dev.txt
+  - pip list # Display the packages that are installed.
 
 pytest:
   stage: testing
