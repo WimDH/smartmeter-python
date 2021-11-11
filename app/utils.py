@@ -23,6 +23,9 @@ def convert_timestamp(timestamp: str) -> str:
     YYMMDDHHMMSS[WS]
     Last letter can be a S (summer) or a W (winter).
     """
+    if timestamp == "":
+        raise ValueError("Timestamp cannot be empty.")
+
     tz_map: Dict = {"S": "02:00", "W": "01:00"}
     year: str = "20" + timestamp[0:2]
     month: str = timestamp[2:4]

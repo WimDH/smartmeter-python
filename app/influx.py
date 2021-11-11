@@ -43,34 +43,34 @@ class DbInflux:
             password=self.password,
         )
 
-    def write(self, data: Dict) -> List[bool]:
+    def write(self, data: Dict) -> Tuple[bool, ...]:
         """write a telegram to influx."""
         e_data: Dict
         g_data: Dict
-        status: List = []
+        status: List[bool] = []
 
         (e_data, g_data) = self.craft_json(data)
 
-        for measurement, data in [("Electricity", e_data), ("Gas", g_data)]:
+        for (measurement, measurement_data) in [("Electricity", e_data), ("Gas", g_data)]:
 
             if (
                 self.conn.write_points(
                     [
-                        data,
+                        measurement_data,
                     ]
                 )
                 is True
             ):
-                LOG.debug(f"{measurement} data point successfully written: {data}")
+                LOG.debug(f"{measurement} data point successfully written: {measurement_data}")
                 status.append(True)
             else:
-                LOG.warning(f"{measurement} data point not written: {data}")
+                LOG.warning(f"{measurement} data point not written: {measurement_data}")
                 status.append(False)
 
-        return status
+        return tuple(status)
 
     @staticmethod
-    def craft_json(data: Dict) -> Tuple[Dict]:
+    def craft_json(data: Dict) -> Tuple[Dict, Dict]:
         """Create a valid JSON for the influxDB out of the data we got."""
         LOG.debug("Crafting Influx JSON datapoints.")
 
@@ -78,7 +78,7 @@ class DbInflux:
         e_data = {
             "measurement": "electricity",
             "tags": {},
-            "time": convert_timestamp(data.get("timestamp")),
+            "time": convert_timestamp(data.get("timestamp", "")),
             "fields": {
                 key: value
                 for (key, value) in data.items()
@@ -92,7 +92,7 @@ class DbInflux:
         g_data = {
             "measurement": "gas",
             "tags": {},
-            "time": convert_timestamp(data.get("gas_timestamp")),
+            "time": convert_timestamp(data.get("gas_timestamp", "")),
             "fields": {
                 key: value
                 for (key, value) in data.items()

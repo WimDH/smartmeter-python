@@ -26,23 +26,24 @@ def msg_stream() -> BytesIO:
     data: bytearray = bytearray()  # Main data container
     telegram: bytearray = bytearray()  # Container for one telegram
     detected_telegram_start: bool = False
+    encoded_line: bytes
 
     with open("tests/testdata/meter_stream.txt", "r") as fh:
         for line in fh.readlines():
             # The data coming from the meter has a M$ style newline.
-            line = re.sub(b"\n", b"\r\n", line.encode("ascii"))
+            encoded_line = re.sub(b"\n", b"\r\n", line.encode("ascii"))
 
             # Create new telegram at the start of a telegram.
-            if line.startswith(b"/FLU"):
+            if line.startswith("/FLU"):
                 telegram = bytearray()
                 detected_telegram_start = True
 
-            if detected_telegram_start and not line.startswith(b"!AAAA"):
-                telegram += line
+            if detected_telegram_start and not line.startswith("!AAAA"):
+                telegram += encoded_line
 
             # Detect end of message.
             # Re-calculate the CRC because we changed the ID and serials.
-            if line.startswith(b"!AAAA"):
+            if line.startswith("!AAAA"):
                 telegram += b"!"
                 calculated_crc = str(hex(Crc16Lha.calc(telegram)))[2:].upper().zfill(4)
                 telegram += calculated_crc.encode("ascii") + b"\r\n"

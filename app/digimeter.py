@@ -52,12 +52,15 @@ def parse(raw_msg):
     return msg
 
 
-def check_msg(raw_msg: str) -> bool:
+def check_msg(raw_msg: bytearray) -> bool:
     """
     Check if the message is valid.
     The provided CRC should be the same as the calculated one.
     Return True
     """
+    provided_crc: str
+    calculated_crc: str
+
     # Find the end of message character '!'
     LOG.debug("Checking CRC of message. Message length is {}.".format(len(raw_msg)))
     pos = raw_msg.find(b"!")
@@ -67,13 +70,14 @@ def check_msg(raw_msg: str) -> bool:
         provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
         calculated_crc = hex(Crc16Lha.calc(data))
     except ValueError:
-        provided_crc = 0x0
+        provided_crc = "0x0"
 
     crc_match = calculated_crc == provided_crc
     if crc_match:
         LOG.debug("Telegram has a valid CRC.")
     else:
         LOG.warning("Telegram has an invalid CRC!")
+
     return crc_match
 
 
@@ -85,7 +89,7 @@ def read_serial(
     parity: str,
     stopbits: int,
     _quit_after: Optional[int] = None,
-) -> str:
+) -> None:
     """
     Read from the serial port until a complete message is detected.
     When the message is complete, add ir to the msg Queue as a sting.

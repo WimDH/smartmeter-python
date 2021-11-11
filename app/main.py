@@ -23,10 +23,11 @@ def convert_from_human_readable(value: Union[str, int]) -> int:
     """
     power = {"k": 1, "M": 2, "G": 3}
 
-    if type(value) == int or value.isnumeric():
+    if type(value) == int or (type(value) == str and value.isnumeric()):
         return int(value)
     elif type(value) == str and value[-1] in ["k", "M", "G"]:
-        return int(value[:-1]) * (1024 ** power.get(value[-1]))
+        suffix: str = value[:-1]
+        return int(suffix) * (1024 ** power.get(suffix, 0))
     else:
         raise ValueError(f"'{value}' is an unknown value.")
 
@@ -133,7 +134,7 @@ def main() -> None:
         password=config["influx"]["password"],
     )
 
-    msg_q = mp.Queue()
+    msg_q: mp.Queue = mp.Queue()
 
     log.info(
         "Starting serial port reader thread on port '{}'.".format(
