@@ -6,7 +6,7 @@ The idea for this script came when the analog meters were replaced by digital on
 Besides switching load, the application can export the data to an InfluxDB.
 
 ## Design
-Smartmeter is designed to run on a Raspberry Pi. During the development and initial testing, I used an old Raspberry Pi (model B rev. 2). Some of the design decisions are based upon this old model.
+Smartmeter is tested on a Raspberry Pi, but in can also run on a PC/server. During the development and initial testing, I used an old Raspberry Pi (model B rev. 2). Some of the design decisions are based upon this old model. I thought if it can run an an old pi, it must work on the newer versions as well.
 ![Old pi model B rev. 2](https://nl.m.wikipedia.org/wiki/Bestand:Raspberry_Pi_Model_B_Rev._2.jpg)
 ### How it works high level
 The application is running in 2 different processes (using Python's `multiprocessing` library). One is running the process to collect the data from the serial port of the meter (and some basic processing is done as well), and the other process is taking care of all the post-processing actions (like uploading the data to the InfluxDB, switching relays on and off, ...)
@@ -21,41 +21,41 @@ Anyway, my plan is to run the Influx + Grafana in the cloud.
 ## Telegram lay-out
 
 A new message starts with a forward slash `/` followed by an ID, and ending with 2 two CR/LF sequences.
-At the end of a message, you'll find a `!` + the 16 bit CRC.
+The end of the message is an `!` + the 16 bit CRC.
 ### Fieldnames
 
-| Obis code | Meaning |
-|-----------|---------|
-| 0-0:96.1.4 | ID |
-| 0-0:96.1.1 | Serienummer van de elektriciteitsmeter (in ASCII hex) |
-| 0-0:1.0.0  | Timestamp van de telegram |
-| 1-0:1.8.1	| Tarief 1 (dag) – totaal verbruik |
-| 1-0:1.8.2	| Tarief 2 (nacht) – totaal verbruik |
-| 1-0:2.8.1	| Tarief 1 (dag) – totale injectie |
-| 1-0:2.8.2	| Tarief 2 (nacht) – totale injectie |
-| 0-0:96.14.0| Huidig tarief (1=dag,2=nacht) |
-| 1-0:1.7.0	| Huidig verbuik op alle fases |
-| 1-0:2.7.0	| Huidige injectie op alle fases |
-| 1-0:21.7.0 | L1 huidig verbruik |
-| 1-0:41.7.0 | L2 huidig verbruik |
-| 1-0:61.7.0 | L3 huidig verbruik |
-| 1-0:22.7.0 | L1 huidige injectie |
-| 1-0:42.7.0 | L2 huidige injectie |
-| 1-0:62.7.0 | L3 huidige injectie |
-| 1-0:32.7.0 | L1 spanning |
-| 1-0:52.7.0 | L2 spanning |
-| 1-0:72.7.0 | L3 spanning |
-| 1-0:31.7.0 | L1 stroom |
-| 1-0:51.7.0 | L2 stroom |
-| 1-0:71.7.0 | L3 stroom |
-| 0-0:96.3.10 | Positie schakelaar elektriciteit |
-| 0-0:17.0.0 | Max. toegelaten vermogen/fase |
-| 1-0:31.4.0 | Max. toegelaten stroom/fase |
-| 0-0:96.13.0 | Bericht |
-| 0-1:24.1.0 | Andere toestellen op bus |
-| 0-1:96.1.1 | Serienummer van de aardgasmeter (in ASCII hex) |
-| 0-1:24.4.0 | Positie schakelaar aardgas |
-| 0-1:24.2.3 | Data van de aardgasmeter (timestamp) (waarde) |
+| Obis code | Meaning | Unit | InfluxDB fieldname |
+|-----------|---------|------|--------------------|
+| 0-0:96.1.4 | ID |||
+| 0-0:96.1.1 | Serial number of the digital meter (ASCII hex). |||
+| 0-0:1.0.0  | Timestamp of the telegram || timestamp |
+| 1-0:1.8.1	| Total consumption tariff 1 (day, full) | kWh | total_consumption_day |
+| 1-0:1.8.2	| Total consumption tariff 2 (night, reduced) | kWh | total_consumption_night |
+| 1-0:2.8.1	| Total injection tariff 1 (day, full) | kWh | total_injection_day |
+| 1-0:2.8.2	| Total injection tariff 2 (night, reduced) | kWh | total_injection_night |
+| 0-0:96.14.0| Actual tariff (1=full,day - 2=night,reduced) ||
+| 1-0:1.7.0	| Actual consumption on all phases | kWh | actual_total_consumption |
+| 1-0:2.7.0	| Actual injection on all phases | kWh | actual_total_injection |
+| 1-0:21.7.0 | L1 actual consumption | W | actual_l1_consumption |
+| 1-0:41.7.0 | L2 actual consumption | W | actual_l2_consumption |
+| 1-0:61.7.0 | L3 actual consumption | W | actual_l3_consumption |
+| 1-0:22.7.0 | L1 actual injection | W | actual_l1_injection |
+| 1-0:42.7.0 | L2 actual injection | W | actual_l2_injection |
+| 1-0:62.7.0 | L3 actual injection | W | actual_l3_injection |
+| 1-0:32.7.0 | L1 voltage | V | l1_voltage |
+| 1-0:52.7.0 | L2 voltage | V | l2_voltage |
+| 1-0:72.7.0 | L3 voltage | V | l3_voltage |
+| 1-0:31.7.0 | L1 current | A | l1_current |
+| 1-0:51.7.0 | L2 current | A | l2_current |
+| 1-0:71.7.0 | L3 current | A | l3_current |
+| 0-0:96.3.10 | Position internal switch (power) ||
+| 0-0:17.0.0 | Max. allowed power per phase | kW ||
+| 1-0:31.4.0 | Max. allowed current per phase | A || 
+| 0-0:96.13.0 | Custom messages |||
+| 0-1:24.1.0 | Other devices on the bus |||
+| 0-1:96.1.1 | Serial number of the gas meter (in ASCII hex) ||||
+| 0-1:24.4.0 | Position switch gas meter |||
+| 0-1:24.2.3 | Data coning from the gas meter (timestamp) (total consumption) | m³ | gas_timestamp total_gas_consumption |
 
 ### Specific formats
 The timestamps are not in epoch (seconds sinds the first of January 1970), but are formatted as `YYMMDDHHMMSS[WS]` where `W` is winter time and `S` is summer time. The year is in 2-digit format, 21 being 2021.\
