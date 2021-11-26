@@ -34,14 +34,14 @@ The end of the message is an `!` + the 16 bit CRC.
 | 1-0:2.8.1	| Total injection tariff 1 (day, full) | kWh | total_injection_day |
 | 1-0:2.8.2	| Total injection tariff 2 (night, reduced) | kWh | total_injection_night |
 | 0-0:96.14.0| Actual tariff (1=full,day - 2=night,reduced) ||
-| 1-0:1.7.0	| Actual consumption on all phases | kWh | actual_total_consumption |
-| 1-0:2.7.0	| Actual injection on all phases | kWh | actual_total_injection |
-| 1-0:21.7.0 | L1 actual consumption | W | actual_l1_consumption |
-| 1-0:41.7.0 | L2 actual consumption | W | actual_l2_consumption |
-| 1-0:61.7.0 | L3 actual consumption | W | actual_l3_consumption |
-| 1-0:22.7.0 | L1 actual injection | W | actual_l1_injection |
-| 1-0:42.7.0 | L2 actual injection | W | actual_l2_injection |
-| 1-0:62.7.0 | L3 actual injection | W | actual_l3_injection |
+| 1-0:1.7.0	| Actual consumption on all phases | kW | actual_total_consumption |
+| 1-0:2.7.0	| Actual injection on all phases | kW | actual_total_injection |
+| 1-0:21.7.0 | L1 actual consumption | kW | actual_l1_consumption |
+| 1-0:41.7.0 | L2 actual consumption | kW | actual_l2_consumption |
+| 1-0:61.7.0 | L3 actual consumption | kW | actual_l3_consumption |
+| 1-0:22.7.0 | L1 actual injection | kW | actual_l1_injection |
+| 1-0:42.7.0 | L2 actual injection | kW | actual_l2_injection |
+| 1-0:62.7.0 | L3 actual injection | kW | actual_l3_injection |
 | 1-0:32.7.0 | L1 voltage | V | l1_voltage |
 | 1-0:52.7.0 | L2 voltage | V | l2_voltage |
 | 1-0:72.7.0 | L3 voltage | V | l3_voltage |

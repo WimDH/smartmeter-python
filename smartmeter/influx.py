@@ -1,7 +1,7 @@
 import influxdb
 from logging import getLogger
 from typing import Dict, List, Tuple
-from app.utils import convert_timestamp
+from smartmeter.utils import convert_timestamp
 
 LOG = getLogger(".")
 

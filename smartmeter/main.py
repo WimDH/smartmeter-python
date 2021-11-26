@@ -8,10 +8,15 @@ from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
 import multiprocessing as mp
 from influxdb.client import InfluxDBClient
-from app.digimeter import read_serial
-from app.influx import DbInflux
-from app.utils import convert_from_human_readable
+from smartmeter.digimeter import read_serial
+from smartmeter.influx import DbInflux
+from smartmeter.utils import convert_from_human_readable
 from time import sleep
+
+try:
+    import gpiozero as gpio
+except ImportError:
+    pass
 
 
 def parse_cli(cli_args: List) -> argparse.Namespace:
@@ -100,6 +105,11 @@ def main() -> None:
         loglevel=config["logging"]["loglevel"],
     )
     log.info("---start---")
+
+    try:
+        log.info("Board info: {}".format(str(gpio.pi_info())))
+    except ModuleNotFoundError:
+        log.info("Board info not available.")
 
     log.info(
         "Setup connection for InfluxDB for database '{}' on host '{}'.".format(

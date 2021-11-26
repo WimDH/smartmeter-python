@@ -1,5 +1,5 @@
 import pytest
-from app.influx import convert_timestamp, DbInflux
+from smartmeter.influx import convert_timestamp, DbInflux
 
 
 @pytest.fixture

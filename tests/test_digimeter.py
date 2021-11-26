@@ -11,7 +11,7 @@ sys.path.append(
     os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
 )
 
-from app.digimeter import parse, autoformat, check_msg, read_serial, serial
+from smartmeter.digimeter import parse, autoformat, check_msg, read_serial, serial
 
 ROOT_DIR = os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
 

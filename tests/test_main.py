@@ -1,6 +1,6 @@
 import pytest
 import logging
-from app.main import parse_cli, load_config, setup_log
+from smartmeter.main import parse_cli, load_config, setup_log
 
 
 def test_parse_cli() -> None:

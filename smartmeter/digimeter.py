@@ -6,7 +6,7 @@ from typing import Optional
 from serial.serialutil import SerialException
 from queue import Queue
 from datetime import datetime
-from app.utils import convert_timestamp, calculate_timestamp_drift, autoformat
+from smartmeter.utils import convert_timestamp, calculate_timestamp_drift, autoformat
 
 
 LOG = getLogger(".")
@@ -58,8 +58,8 @@ def check_msg(raw_msg: bytearray) -> bool:
     The provided CRC should be the same as the calculated one.
     Return True
     """
-    provided_crc: str
-    calculated_crc: str
+    provided_crc: str = ""
+    calculated_crc: str = ""
 
     # Find the end of message character '!'
     LOG.debug("Checking CRC of message. Message length is {}.".format(len(raw_msg)))
@@ -70,7 +70,8 @@ def check_msg(raw_msg: bytearray) -> bool:
         provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
         calculated_crc = hex(Crc16Lha.calc(data))
     except ValueError:
-        provided_crc = "0x0"
+        LOG.warning("Unable to calculate CRC!")
+        return False
 
     crc_match = calculated_crc == provided_crc
     if crc_match:

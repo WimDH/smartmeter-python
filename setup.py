@@ -13,7 +13,7 @@ def get_version():
 setup(
     name="smartmeter",
     version="2.0.0",  # Required
-    description="Read data from the digital electricity meter.",
+    description="Read data from the (belgian) digital electricity meter.",
     url="https://gitlab.com/wimdh/smartmeter",
     author="Wim De Hul",
     author_email="smartmeter@dehul.net",
@@ -30,7 +30,7 @@ setup(
         "Programming Language :: Python :: 3 :: Only",
     ],
     keywords="digital meter, energy, electricity, power control",
-    packages=find_packages(where="app"),
+    packages=find_packages(where="smartmeter"),
     python_requires=">=3.6, <4",
     # install_requires=["peppercorn"],  # Optional
     # extras_require={  # Optional
