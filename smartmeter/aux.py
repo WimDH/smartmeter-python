@@ -63,7 +63,7 @@ class Load:
 
     @property
     def switch_on_power(self):
-        """ Power in watt to be injected before the load can be switched on."""
+        """Power in watt to be injected before the load can be switched on."""
         return self.max_power * self.switch_threshold / 100
 
     @property
@@ -79,7 +79,7 @@ class Load:
         """
         if self.state_start_time is None:
             return -1
-        
+
         return int(time() - self.state_start_time)
 
 
@@ -90,6 +90,7 @@ class Timer:
         1. "upper": the upper threshold, which defines the maximum injected power.
         2. "lower": the lower threshold, which defines the maximum consumed power.
     """
+
     def __init__(self) -> None:
         self._start_time: Union[float, None] = None
         self.threshold: Union[str, None] = None
@@ -140,10 +141,13 @@ class Timer:
 
 
 class LoadManager:
-    """ Manages the lifecycle of a connected load."""
+    """Manages the lifecycle of a connected load."""
+
     def __init__(self) -> None:
         # Setup the load(s)
-        self.load = Load(pin=17, name="car charger", max_power=230 * 6, switch_threshold=75)
+        self.load = Load(
+            pin=17, name="car charger", max_power=230 * 6, switch_threshold=75
+        )
         self.timer = Timer()
 
     def process(self, data: Dict) -> None:
@@ -152,27 +156,32 @@ class LoadManager:
         """
         actual_injected = data.get("actual_total_injection", 0)
         actual_consumed = data.get("actual_total_consumption", 0)
-        LOG.debug(f"Load manager: Processing data: actual injected={actual_injected}W, actual consumed={actual_consumed}W.")
+        LOG.debug(
+            f"Load manager: Processing data: actual injected={actual_injected}W, actual consumed={actual_consumed}W."
+        )
 
         # Start the timer if the actual power is crossing the upper threshold.
         if not self.timer.is_started and actual_injected >= self.load.switch_on_power:
-            LOG.debug("Loadmanager: upper threshold crossed, started the stablity timer.")
+            LOG.debug(
+                "Loadmanager: upper threshold crossed, started the stablity timer."
+            )
             self.timer.start(threshold="upper")
             return
 
         # Start the timer if the actual power is crossing the lower threshold.
         if not self.timer.is_started and actual_consumed >= self.load.switch_off_power:
-            LOG.debug("Loadmanager: lower threshold crossed, started the stablity timer.")
+            LOG.debug(
+                "Loadmanager: lower threshold crossed, started the stablity timer."
+            )
             self.timer.start(threshold="lower")
             return
 
         # Reset the timer if the actual power is between both thresholds, or when is is crossing the oposite threshold.
-        if (
-            self.timer.is_started and
-            (
-                actual_injected < self.load.switch_on_power and actual_consumed == 0
-                or actual_consumed < self.load.switch_off_power and actual_injected == 0
-            )
+        if self.timer.is_started and (
+            actual_injected < self.load.switch_on_power
+            and actual_consumed == 0
+            or actual_consumed < self.load.switch_off_power
+            and actual_injected == 0
         ):
             self.timer.reset()
             return

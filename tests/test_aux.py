@@ -25,10 +25,10 @@ def test_timer_elapsec_when_not_started():
 
 def test_load_switch_on_off_power():
     """"""
-    l = Load(pin=1, name="test", max_power=1000, switch_threshold=80)
+    load = Load(pin=1, name="test", max_power=1000, switch_threshold=80)
 
-    assert l.switch_on_power == 800
-    assert l.switch_off_power == 200
+    assert load.switch_on_power == 800
+    assert load.switch_off_power == 200
 
 
 def test_loadmanager_process_no_action(monkeypatch):
@@ -53,10 +53,13 @@ def test_loadmanager_process_no_action(monkeypatch):
 @pytest.mark.parametrize(
     "testdata, timer_state, timer_threshold",
     [
-        ({"actual_total_injection": 1500, "actual_total_consumption": 0}, True, "upper"),
-        ({"actual_total_injection": 0, "actual_total_consumption": 500}, True, "lower")
-    ]
-
+        (
+            {"actual_total_injection": 1500, "actual_total_consumption": 0},
+            True,
+            "upper",
+        ),
+        ({"actual_total_injection": 0, "actual_total_consumption": 500}, True, "lower"),
+    ],
 )
 def test_loadmanager_set_timer(monkeypatch, testdata, timer_state, timer_threshold):
     """
@@ -72,19 +75,52 @@ def test_loadmanager_set_timer(monkeypatch, testdata, timer_state, timer_thresho
     sleep(1)
     assert lm.timer.elapsed >= 1
 
-@pytest.mark.parametrize(
-    "testdata, timer_state, timer_threshold",
-    [
-        ({"actual_total_injection": 900, "actual_total_consumption": 0}, True, "upper"),
-        ({"actual_total_injection": 0, "actual_total_consumption": 50}, True, "lower")
-    ]
 
+@pytest.mark.parametrize(
+    "testdata, timer_state",
+    [
+        ({"actual_total_injection": 900, "actual_total_consumption": 0}, True),
+        ({"actual_total_injection": 0, "actual_total_consumption": 50}, True),
+    ],
 )
-def test_loadmanager_reset_timer(monkeypatch):
+def test_loadmanager_reset_timer(monkeypatch, testdata, timer_state):
     """
     Test if the timer is reset when we are crossing the previously set threshold.
     """
     monkeypatch.setattr(gpio, "DigitalOutputDevice", DigitalOutputDevice)
 
     lm = LoadManager()
-    lm.process(data=testdata)    
+    lm.timer._start_time = time() - 100
+    lm.process(data=testdata)
+
+    assert lm.timer.is_started is timer_state
+    assert lm.timer.elapsed < 1
+
+
+@pytest.mark.parametrize(
+    "testdata, time_delta, load_initial_state, load_state",
+    [
+        ({"actual_total_injection": 2000, "actual_total_consumption": 0}, 0, 0, 0),
+        ({"actual_total_injection": 2000, "actual_total_consumption": 0}, 310, 0, 1),
+        ({"actual_total_injection": 100, "actual_total_consumption": 0}, 0, 0, 0),
+        ({"actual_total_injection": 100, "actual_total_consumption": 0}, 310, 0, 0),
+        ({"actual_total_injection": 0, "actual_total_consumption": 1000}, 0, 1, 1),
+        ({"actual_total_injection": 0, "actual_total_consumption": 1000}, 310, 1, 0),
+        ({"actual_total_injection": 0, "actual_total_consumption": 10}, 0, 1, 1),
+        ({"actual_total_injection": 0, "actual_total_consumption": 10}, 310, 1, 1),
+    ],
+)
+def test_switch_load_on_off(
+    monkeypatch, testdata, time_delta, load_initial_state, load_state
+):
+    """
+    Test if the load can be swicthed on and off if the conditions are met.
+    """
+    monkeypatch.setattr(gpio, "DigitalOutputDevice", DigitalOutputDevice)
+
+    lm = LoadManager()
+    lm.timer._start_time = time() - time_delta
+    lm.load.on() if load_initial_state == 1 else lm.load.off()
+    lm.process(data=testdata)
+
+    assert lm.load.status == load_state
