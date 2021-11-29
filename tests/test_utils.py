@@ -1,5 +1,9 @@
 import pytest
-from smartmeter.utils import convert_from_human_readable, autoformat, calculate_timestamp_drift
+from smartmeter.utils import (
+    convert_from_human_readable,
+    autoformat,
+    calculate_timestamp_drift,
+)
 
 
 @pytest.mark.parametrize(
