@@ -44,7 +44,7 @@ flake8:
   stage: linting
   allow_failure: true
   script:
-    - flake8 app/ tests/ setup.py
+    - flake8 smartmeter/ tests/ setup.py
 
 #sast:
 #  stage: linting
