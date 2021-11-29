@@ -10,6 +10,7 @@ except ImportError:
 LOG = getLogger(".")
 VALID_THRESHOLD_NAMES = ["upper", "lower"]
 
+
 class Load:
     """
     Defines a load.
@@ -27,6 +28,7 @@ class Load:
         self.name = name
         self.max_power = max_power
         self.switch_threshold = switch_threshold
+        self.state_start_time = None
 
     @property
     def status(self):
@@ -42,11 +44,13 @@ class Load:
     def on(self):
         """Switches the load on (set the pin high."""
         LOG.info(f"Turning {self.name} on GPIO pin {self.gpio_pin} ON.")
+        self.state_start_time = time()
         self._load.on()
 
     def off(self):
         """Switches the load on (set the pin high."""
         LOG.info(f"Turning {self.name} on GPIO pin {self.gpio_pin} OFF.")
+        self.state_start_time = time()
         self._load.off()
 
     @property
@@ -61,11 +65,22 @@ class Load:
     def switch_on_power(self):
         """ Power in watt to be injected before the load can be switched on."""
         return self.max_power * self.switch_threshold / 100
-    
+
     @property
     def switch_off_power(self):
         """Power to be consumed before the load is swicthed off."""
         return self.max_power * (100 - self.switch_threshold) / 100
+
+    @property
+    def state_time(self):
+        """
+        Count how many seconds we are in a stable state (on of off).
+        Return -1 if the state is not defined yet.
+        """
+        if self.state_start_time is None:
+            return -1
+        
+        return int(time() - self.state_start_time)
 
 
 class Timer:
@@ -160,6 +175,22 @@ class LoadManager:
             )
         ):
             self.timer.reset()
+            return
+
+        # Switch on load.
+        # If the elapsed time of the stability timer is more than 5 minutes.
+        if self.timer.elapsed > 300 and actual_injected > self.load.switch_on_power:
+            LOG.info("Loadmanager: switching the load on.")
+            self.load.on()
+            self.timer.stop()
+            return
+
+        # Switch off load.
+        # If the elapsed time of the stability timer is more than 5 minutes.
+        if self.timer.elapsed > 300 and actual_consumed >= self.load.switch_off_power:
+            LOG.info("Loadmanager: switching the load off.")
+            self.load.off()
+            self.timer.stop()
             return
 
         return
