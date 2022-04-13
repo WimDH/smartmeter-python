@@ -77,7 +77,10 @@ def setup_log(
 
 
 def dispatcher(log: logging.Logger, q: mp.Queue, influx_db: InfluxDBClient) -> None:
-    """A dispatcher function that sends the messages to an InfluxDB and controls the relay."""
+    """
+    Dispatcher function that sends the messages to an InfluxDB
+    and controls the relay and other I/O.
+    """
 
     influx_db.connect()
 
@@ -95,6 +98,7 @@ def main() -> None:
     Main entrypoint for the script.
     Parse the CLI options, load the config and setup the logging.
     """
+    db = None
     args = parse_cli(sys.argv[1:])
     config = load_config(args.configfile)
     log = setup_log(
@@ -111,25 +115,30 @@ def main() -> None:
     except ModuleNotFoundError:
         log.info("Board info not available.")
 
-    log.info(
-        "Setup connection for InfluxDB for database '{}' on host '{}'.".format(
-            config["influx"]["database"], config["influx"]["hostname"]
+    if config["influx"]["enabled"] is True:
+
+        log.info(
+            "Setup connection for InfluxDB for database '{}' on host '{}'.".format(
+                config["influx"]["database"], config["influx"]["hostname"]
+            )
         )
-    )
-    db = DbInflux(
-        host=config["influx"]["hostname"],
-        port=int(config["influx"]["port"]),
-        ssl=config.getboolean("influx", "ssl"),
-        verify_ssl=config.getboolean("influx", "verify_ssl"),
-        database=config["influx"]["database"],
-        username=config["influx"]["username"],
-        password=config["influx"]["password"],
-    )
+        db = DbInflux(
+            host=config["influx"]["hostname"],
+            port=int(config["influx"]["port"]),
+            ssl=config.getboolean("influx", "ssl"),
+            verify_ssl=config.getboolean("influx", "verify_ssl"),
+            database=config["influx"]["database"],
+            username=config["influx"]["username"],
+            password=config["influx"]["password"],
+        )
+
+    else:
+        log.info("InfluxDB is disabled!")
 
     msg_q: mp.Queue = mp.Queue()
 
     log.info(
-        "Starting serial port reader thread on port '{}'.".format(
+        "Starting serial port reader on port '{}'.".format(
             config["serial"]["port"]
         )
     )
@@ -146,7 +155,7 @@ def main() -> None:
     )
     serial_process.start()
 
-    log.info("Starting dispatcher thread.")
+    log.info("Starting dispatcher.")
     dispatcher_process = mp.Process(target=dispatcher, args=(log, msg_q, db))
     dispatcher_process.start()
 

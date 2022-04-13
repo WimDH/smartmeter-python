@@ -9,6 +9,8 @@ LOG = getLogger(".")
 class DbInflux:
     """
     Connect to Influx and write data.
+    Todo: if influxdb is unreachable, cache the result and
+          write them to the DB whet the connection is back up.
     """
 
     def __init__(
@@ -21,6 +23,7 @@ class DbInflux:
         username: str = "root",
         password: str = "root",
     ) -> None:
+
         self.host = host
         self.port = port
         self.ssl = ssl
@@ -44,7 +47,11 @@ class DbInflux:
         )
 
     def write(self, data: Dict) -> Tuple[bool, ...]:
-        """write a telegram to influx."""
+        """
+        Write a telegram to influx.
+        Return the status as a list of booleans for each datapoint written.
+        """
+
         e_data: Dict
         g_data: Dict
         status: List[bool] = []
@@ -77,6 +84,7 @@ class DbInflux:
     @staticmethod
     def craft_json(data: Dict) -> Tuple[Dict, Dict]:
         """Create a valid JSON for the influxDB out of the data we got."""
+
         LOG.debug("Crafting Influx JSON datapoints.")
 
         # Electricity data.

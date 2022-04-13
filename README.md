@@ -65,7 +65,7 @@ The tarrif plans "dag" (day) and "nacht" (night) are also known as "full" and "r
 ### Installation
 1. Clone this repository somewhere on your local system.
 ```
-cd your-folder
+cd <your-folder>
 git clone https://gitlab.com/wimdh/smartmeter.git .
 ```
 2. Create a virtual environment and install the required packages.
@@ -78,7 +78,7 @@ pip install -r requirements.txt
 pip install -r requirements.dev.txt
 ```
 ### Run the application
-Create a configfile (change it to you needs), and run the application.
+Create a config file (change it to you needs), and run the application.
 ```
 cp config.sample.ini your-configfile.ini
 python app/main.py -c your-configfile.ini
