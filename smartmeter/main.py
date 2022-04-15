@@ -138,9 +138,7 @@ def main() -> None:
     msg_q: mp.Queue = mp.Queue()
 
     log.info(
-        "Starting serial port reader on port '{}'.".format(
-            config["serial"]["port"]
-        )
+        "Starting serial port reader on port '{}'.".format(config["serial"]["port"])
     )
     serial_process = mp.Process(
         target=read_serial,

@@ -3,6 +3,17 @@ from typing import Union, Dict
 from time import time
 
 try:
+    import board
+    import displayio
+    # import busio
+    import adafruit_displayio_ssd1306
+
+    displayio.release_displays()
+
+except ImportError:
+    pass
+
+try:
     import gpiozero as gpio
 except ImportError:
     pass
@@ -38,7 +49,7 @@ class Load:
         0 if the load is off.
         1 if the load is on.
         """
-        state: int = "ON" if self._load.value == 1 else "OFF"
+        state: str = "ON" if self._load.value == 1 else "OFF"
         LOG.debug(f"{self.name} on GPIO pin {self.gpio_pin} is {state}.")
         return self._load.value
 
@@ -207,12 +218,28 @@ class LoadManager:
         return
 
 
-class Peripherals:
+class Display:
     """
-    Class to manage the push buttons, the status leds and the serial display.
+    Class to manage the oled display.
     """
+    oled_witdh = 128
+    oled_height = 64
+    display_address = 0x3C
+
     def __init__(self) -> None:
-        pass
+        """ Initialize the display."""
+        _i2c = board.I2C()
+        _display_bus = displayio.I2CDisplay(_i2c, device_address=self.display_address)
+        self._display = adafruit_displayio_ssd1306.SSD1306(
+            _display_bus, width=self.oled_witdh, height=self.oled_height
+        )
+        self._splash = displayio.Group(max_size=10)
+        self._display.show(self._splash)
+        self._bitmap = displayio.Bitmap(width=self.oled_witdh, height=self.oled_height, value_count=1)
+        _color_palette = displayio.Palette(1)
+        _color_palette[0] = 0x0  # Black
+        _background_sprite = displayio.TileGrid(self._bitmap, pixel_shader=_color_palette, x=0, y=0)
+        self._splash.append(_background_sprite)
 
     def update_display(self):
         """
@@ -230,10 +257,16 @@ class CurrentSensors:
     Manages the 2 current sensors. One sensor measure the load current of the car,
     the other one measures the power coming from the solar panels.
     """
+
     def __init__(self) -> None:
         self.current_vvp = gpio.MCP3204(channel=0, max_voltage=2.5)
         self.current_car = gpio.MCP3204(channel=1, max_voltage=2.5)
 
     def vpp_current(self):
-        """Return current produced wby PVV."""
+        """Return current produced by the solar panels (PVV)."""
         return 0
+
+
+if __name__ == "__main__":
+
+    d = Display()
