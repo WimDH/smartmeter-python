@@ -270,3 +270,4 @@ class CurrentSensors:
 if __name__ == "__main__":
 
     d = Display()
+
