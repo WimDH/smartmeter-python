@@ -233,7 +233,7 @@ class Display:
         self._display = adafruit_displayio_ssd1306.SSD1306(
             _display_bus, width=self.oled_witdh, height=self.oled_height
         )
-        self._splash = displayio.Group(max_size=10)
+        self._splash = displayio.Group()
         self._display.show(self._splash)
         self._bitmap = displayio.Bitmap(width=self.oled_witdh, height=self.oled_height, value_count=1)
         _color_palette = displayio.Palette(1)
