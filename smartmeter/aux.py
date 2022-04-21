@@ -236,7 +236,7 @@ class Display:
             addr=self.display_address,
         )
 
-    def update_display(self) -> None:
+    def update_display(self, charging_current=None, Charging_power=None, cycle_duration=None, vvp_power=None) -> None:
         """
         Update the display with the latest info:
          - Charging current
@@ -248,18 +248,8 @@ class Display:
         draw = ImageDraw.Draw(image)
 
         # Load default font.
-        font = ImageFont.load_default()
-        text = "Hello World!"
-        (font_width, font_height) = font.getsize(text)
-        draw.text(
-            (
-                self.oled_witdh // 2 - font_width // 2,
-                self.oled_height // 2 - font_height // 2,
-            ),
-            text,
-            font=font,
-            fill=255,
-        )
+        text = "Charging: 10.0A / 2300W\nCharging time: 3600s\nSolar power: 4000W\nDraw from grid: 10.0A / 2300W"
+        draw.text((2, 2), text, font=ImageFont.load_default(), fill=255)
         self._display.image(image)
         self._display.show()
 
