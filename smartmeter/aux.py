@@ -248,7 +248,7 @@ class Display:
         draw = ImageDraw.Draw(image)
 
         # Load default font.
-        text = "Charging: 10.0A / 2300W\nCharging time: 3600s\nSolar power: 4000W\nDraw from grid: 10.0A / 2300W"
+        text = "CHARGING STATS:\nI: 10.0A\nP: 2300W"
         draw.text((2, 2), text, font=ImageFont.load_default(), fill=255)
         self._display.image(image)
         self._display.show()
