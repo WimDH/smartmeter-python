@@ -35,3 +35,4 @@ toml==0.10.2
 tomli==1.2.1
 typing-extensions==3.10.0.2
 urllib3==1.26.7
+Pillow==9.1.0
