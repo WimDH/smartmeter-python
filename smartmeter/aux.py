@@ -1,13 +1,11 @@
 from logging import getLogger
-from typing import Union, Dict
+from typing import Union, Optional, Dict
 from time import time
 from PIL import Image, ImageDraw, ImageFont
 import asyncio
 
 try:
     import board
-
-    # import busio
     import adafruit_ssd1306
 
 except (ImportError, NotImplementedError):
@@ -27,7 +25,7 @@ class Load:
     Defines a load.
     For Pin numbering: https://gpiozero.readthedocs.io/en/stable/recipes.html#pin-numbering
 
-    switch_threshold is in percent and represents the amount of power that has to come from the solar panels.
+    switch_threshold is expressed in percent and represents the amount of power that has to come from the solar panels.
     """
 
     def __init__(
@@ -40,7 +38,7 @@ class Load:
         self.name: str = name
         self.max_power: float = max_power
         self.switch_threshold: int = switch_threshold
-        self.state_start_time: Union[int, None] = None
+        self.state_start_time: Optional[float] = None
 
     @property
     def status(self) -> int:
@@ -328,4 +326,19 @@ class StatusLed:
     """
 
     def __init__(self) -> None:
-        pass
+        # GPIO22
+        self.led = gpio.LED(pin=22)
+
+    def on(self):
+        self.led.on()
+
+    def off(self):
+        self.led.off()
+
+    def blink(self):
+        self.led.blink()
+
+    @property
+    def status(self):
+        return self.led.is_active()
+
