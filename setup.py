@@ -40,7 +40,7 @@ setup(
     # package_data={  # Optional
     #    "sample": ["package_data.dat"],
     # },
-    # data_files=[("my_data", ["data/data_file"])],  # Optional
+    data_files=[("config.sample.ini", ["config.sample.ini"])],  # Optional
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # `pip` to create the appropriate form of executable for the target
@@ -48,11 +48,11 @@ setup(
     #
     # For example, the following would provide a command called `sample` which
     # executes the function `main` from this package when invoked:
-    # entry_points={  # Optional
-    #    "console_scripts": [
-    #        "sample=sample:main",
-    #    ],
-    # },
+    entry_points={  # Optional
+       "console_scripts": [
+           "smartmeter=smartmeter.main:main",
+       ],
+    },
     project_urls={
         # "Documentation:": "blah"
         "Bug Reports": "https://gitlab.com/wimdh/smartmeter/-/issues",

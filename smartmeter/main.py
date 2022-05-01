@@ -135,7 +135,7 @@ def main() -> None:
     except ModuleNotFoundError:
         log.info("Board info not available.")
 
-    if args.test is True:
+    if args.run_test is True:
         # Run Hardware tests
         result = run_tests()
         sys.exit(result)
