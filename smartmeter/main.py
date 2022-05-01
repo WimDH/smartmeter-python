@@ -10,6 +10,7 @@ import multiprocessing as mp
 from influxdb.client import InfluxDBClient
 from smartmeter.digimeter import read_serial
 from smartmeter.influx import DbInflux
+from smartmeter.aux import Display, StatusLed
 from smartmeter.utils import convert_from_human_readable
 from time import sleep
 
@@ -25,6 +26,7 @@ def parse_cli(cli_args: List) -> argparse.Namespace:
         description="Read and process data from the digital enery meter."
     )
     parser.add_argument("-c", "--config", dest="configfile")
+    parser.add_argument("-T", "--test", action="store_true", dest="run_test")
 
     return parser.parse_args(cli_args)
 
@@ -93,6 +95,24 @@ def dispatcher(log: logging.Logger, q: mp.Queue, influx_db: InfluxDBClient) -> N
             sleep(0.1)
 
 
+def run_tests():
+    """
+    Run hardware tests, mostly stuff from aux.py
+    return 0 is all tests are successful
+    """
+    # Testing the oled display.
+    display = Display()
+    display.update_display(text="This is a\ntest message.")
+
+    # Tesing the status led.
+    status = StatusLed()
+    status.on()
+    sleep(2)
+    status.off()
+
+    return 0
+
+
 def main() -> None:
     """
     Main entrypoint for the script.
@@ -114,6 +134,11 @@ def main() -> None:
         log.info("Board info: {}".format(str(gpio.pi_info())))
     except ModuleNotFoundError:
         log.info("Board info not available.")
+
+    if args.test is True:
+        # Run Hardware tests
+        result = run_tests()
+        sys.exit(result)
 
     if config["influx"]["enabled"] is True:
 
