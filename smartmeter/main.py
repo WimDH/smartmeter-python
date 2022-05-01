@@ -2,7 +2,7 @@ import sys
 import os
 import argparse
 import configparser
-from typing import List
+from typing import List, Dict, Optional
 import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
@@ -13,6 +13,7 @@ from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, StatusLed
 from smartmeter.utils import convert_from_human_readable
 from time import sleep
+import asyncio
 
 try:
     import gpiozero as gpio
@@ -78,19 +79,19 @@ def setup_log(
     return logger
 
 
-def dispatcher(log: logging.Logger, q: mp.Queue, influx_db: InfluxDBClient) -> None:
+def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> None:
     """
-    Dispatcher function that sends the messages to an InfluxDB
+    This worker function sends the messages to an InfluxDB (if configured)
     and controls the relay and other I/O.
     """
-
-    influx_db.connect()
-
+    if influx_db_cfg:
+        pass
+    
     while True:
         if not q.empty():
             data = q.get()
             log.debug("Got a message for the queue: {}".format(data))
-            influx_db.write(data)
+            #TODO: write to influxdb if configured.
         else:
             sleep(0.1)
 
@@ -112,6 +113,10 @@ def run_tests():
     load = LoadManager()
     load.test_load()
 
+    # Test the Buttons
+    display.update_display("Press the Info and\nRestart buttons\n within 10 seconds.")
+
+
     display.display_off()
     return 0
 
@@ -121,7 +126,6 @@ def main() -> None:
     Main entrypoint for the script.
     Parse the CLI options, load the config and setup the logging.
     """
-    db = None
     args = parse_cli(sys.argv[1:])
     config = load_config(args.configfile)
     log = setup_log(
@@ -145,24 +149,10 @@ def main() -> None:
         log.info("---done---")
         sys.exit(result)
 
-    if config["influx"]["enabled"] is True:
-
-        log.info(
-            "Setup connection for InfluxDB for database '{}' on host '{}'.".format(
-                config["influx"]["database"], config["influx"]["hostname"]
-            )
-        )
-        db = DbInflux(
-            host=config["influx"]["hostname"],
-            port=int(config["influx"]["port"]),
-            ssl=config.getboolean("influx", "ssl"),
-            verify_ssl=config.getboolean("influx", "verify_ssl"),
-            database=config["influx"]["database"],
-            username=config["influx"]["username"],
-            password=config["influx"]["password"],
-        )
-
+    if config.get("influx") and config["influx"].get("enabled", True):
+        influx_cfg = config.get("influx")
     else:
+        influx_cfg = None
         log.info("InfluxDB is disabled!")
 
     msg_q: mp.Queue = mp.Queue()
@@ -183,8 +173,8 @@ def main() -> None:
     )
     serial_process.start()
 
-    log.info("Starting dispatcher.")
-    dispatcher_process = mp.Process(target=dispatcher, args=(log, msg_q, db))
+    log.info("Starting worker.")
+    dispatcher_process = mp.Process(target=worker, args=(log, msg_q, db))
     dispatcher_process.start()
 
 
