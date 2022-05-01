@@ -1,4 +1,5 @@
-import influxdb
+# import asyncio
+from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 from logging import getLogger
 from typing import Dict, List, Tuple
 from smartmeter.utils import convert_timestamp
@@ -15,35 +16,17 @@ class DbInflux:
 
     def __init__(
         self,
-        host: str = "127.0.0.1",
-        port: int = 8086,
-        ssl: bool = False,
         verify_ssl: bool = False,
         database: str = "smartmeter",
-        username: str = "root",
-        password: str = "root",
     ) -> None:
 
-        self.host = host
-        self.port = port
-        self.ssl = ssl
-        self.verify_ssl = verify_ssl
-        self.database = database
-        self.username = username
-        self.password = password
-        self.conn
+        self.influx_connection = None
 
     def connect(self) -> None:
         """Connect to InfluxDB."""
 
-        self.conn = influxdb.InfluxDBClient(
-            host=self.host,
-            port=self.port,
-            ssl=self.ssl,
-            verify_ssl=self.verify_ssl,
-            database=self.database,
-            username=self.username,
-            password=self.password,
+        self.influx_connection = InfluxDBClientAsync(
+
         )
 
     def write(self, data: Dict) -> Tuple[bool, ...]:
@@ -83,7 +66,9 @@ class DbInflux:
 
     @staticmethod
     def craft_json(data: Dict) -> Tuple[Dict, Dict]:
-        """Create a valid JSON for the influxDB out of the data we got."""
+        """
+        Create a valid JSON for the influxDB out of the data we got.
+        """
 
         LOG.debug("Crafting Influx JSON datapoints.")
 

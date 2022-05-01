@@ -7,13 +7,13 @@ import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
 import multiprocessing as mp
-from influxdb.client import InfluxDBClient
 from smartmeter.digimeter import read_serial
-from smartmeter.influx import DbInflux
+# from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, StatusLed
 from smartmeter.utils import convert_from_human_readable
 from time import sleep
-import asyncio
+# import asyncio
+
 
 try:
     import gpiozero as gpio
@@ -86,12 +86,12 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
     """
     if influx_db_cfg:
         pass
-    
+
     while True:
         if not q.empty():
             data = q.get()
             log.debug("Got a message for the queue: {}".format(data))
-            #TODO: write to influxdb if configured.
+            # TODO: write to influxdb if configured.
         else:
             sleep(0.1)
 
@@ -115,7 +115,6 @@ def run_tests():
 
     # Test the Buttons
     display.update_display("Press the Info and\nRestart buttons\n within 10 seconds.")
-
 
     display.display_off()
     return 0
@@ -174,7 +173,7 @@ def main() -> None:
     serial_process.start()
 
     log.info("Starting worker.")
-    dispatcher_process = mp.Process(target=worker, args=(log, msg_q, db))
+    dispatcher_process = mp.Process(target=worker, args=(log, msg_q, influx_cfg))
     dispatcher_process.start()
 
 
