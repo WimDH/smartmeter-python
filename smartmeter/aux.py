@@ -316,6 +316,8 @@ class Buttons:
         self.restart_button = gpio.Button(
             pin=27, pull_up=True, bounce_time=self.debounce_time
         )
+        self.info_is_pressed = False
+        self.restart_is_pressed = False
 
 
 class StatusLed:
