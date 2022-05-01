@@ -110,6 +110,7 @@ def run_tests():
     sleep(2)
     status.off()
 
+    display.display_off()
     return 0
 
 
@@ -138,6 +139,8 @@ def main() -> None:
     if args.run_test is True:
         # Run Hardware tests
         result = run_tests()
+        log.debug("Running hardware tests.")
+        log.info("---done---")
         sys.exit(result)
 
     if config["influx"]["enabled"] is True:
