@@ -10,7 +10,7 @@ import multiprocessing as mp
 from influxdb.client import InfluxDBClient
 from smartmeter.digimeter import read_serial
 from smartmeter.influx import DbInflux
-from smartmeter.aux import Display, StatusLed
+from smartmeter.aux import Display, LoadManager, StatusLed
 from smartmeter.utils import convert_from_human_readable
 from time import sleep
 
@@ -106,9 +106,11 @@ def run_tests():
 
     # Tesing the status led.
     status = StatusLed()
-    status.on()
-    sleep(2)
-    status.off()
+    status.test()
+
+    # Test the load.
+    load = LoadManager()
+    load.test_load()
 
     display.display_off()
     return 0

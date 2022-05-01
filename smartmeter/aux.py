@@ -1,6 +1,6 @@
 from logging import getLogger
 from typing import Union, Optional, Dict
-from time import time
+from time import time, sleep
 from PIL import Image, ImageDraw, ImageFont
 import asyncio
 
@@ -177,7 +177,6 @@ class LoadManager:
                 "Loadmanager: upper threshold crossed, started the stablity timer."
             )
             self.timer.start(threshold="upper")
-            return
 
         # Start the timer if the actual power is crossing the lower threshold.
         if not self.timer.is_started and actual_consumed >= self.load.switch_off_power:
@@ -185,7 +184,6 @@ class LoadManager:
                 "Loadmanager: lower threshold crossed, started the stablity timer."
             )
             self.timer.start(threshold="lower")
-            return
 
         # Reset the timer if the actual power is between both thresholds, or when is is crossing the oposite threshold.
         if self.timer.is_started and (
@@ -195,7 +193,6 @@ class LoadManager:
             and actual_injected == 0
         ):
             self.timer.reset()
-            return
 
         # Switch on load.
         # If the elapsed time of the stability timer is more than 5 minutes.
@@ -203,7 +200,6 @@ class LoadManager:
             LOG.info("Loadmanager: switching the load on.")
             self.load.on()
             self.timer.stop()
-            return
 
         # Switch off load.
         # If the elapsed time of the stability timer is more than 5 minutes.
@@ -211,9 +207,12 @@ class LoadManager:
             LOG.info("Loadmanager: switching the load off.")
             self.load.off()
             self.timer.stop()
-            return
 
-        return
+    def test_load(self):
+        """Switch the load on and off for 1 second."""
+        self.load.on()
+        sleep(1)
+        self.load.off()
 
 
 class Display:
@@ -335,8 +334,11 @@ class StatusLed:
     def off(self):
         self.led.off()
 
-    def blink(self):
-        self.led.blink()
+    def test(self):
+        """Switch the LED on for 1 second."""
+        self.led.on()
+        sleep(1)
+        self.led.off()
 
     @property
     def status(self):
