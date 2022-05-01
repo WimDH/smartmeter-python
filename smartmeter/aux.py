@@ -281,7 +281,7 @@ class Display:
         while cnt < nbr:
             for t in text:
                 self.update_display(text=t)
-                asyncio.sleep(wait)
+                await asyncio.sleep(wait)
 
         self.display_off
 
@@ -341,4 +341,3 @@ class StatusLed:
     @property
     def status(self):
         return self.led.is_active()
-
