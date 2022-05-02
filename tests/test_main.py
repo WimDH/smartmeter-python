@@ -34,9 +34,11 @@ def test_load_config() -> None:
     ]
 
     assert config.items("influx") == [
-        ("hostname", "127.0.0.1"),
-        ("port", "8086"),
-        ("database", "smartmeter"),
+        ("url", '"https://127.0.0.1:8086"'),
+        ("token", '"ABC123"'),
+        ("org", '"your_org"'),
+        ("verify_ssl", "yes"),
+        ("bucket", "smartmeter"),
     ]
 
 
