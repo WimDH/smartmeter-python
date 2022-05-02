@@ -1,4 +1,3 @@
-import asyncio
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 from logging import getLogger
 from typing import Dict, List, Tuple
