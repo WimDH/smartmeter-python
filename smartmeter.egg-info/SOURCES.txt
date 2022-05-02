@@ -1,0 +1,8 @@
+README.md
+config.sample.ini
+setup.py
+smartmeter.egg-info/PKG-INFO
+smartmeter.egg-info/SOURCES.txt
+smartmeter.egg-info/dependency_links.txt
+smartmeter.egg-info/entry_points.txt
+smartmeter.egg-info/top_level.txt

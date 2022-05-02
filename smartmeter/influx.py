@@ -1,4 +1,4 @@
-# import asyncio
+import asyncio
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 from logging import getLogger
 from typing import Dict, List, Tuple
@@ -10,67 +10,63 @@ LOG = getLogger(".")
 class DbInflux:
     """
     Connect to Influx and write data.
-    Todo: if influxdb is unreachable, cache the result and
-          write them to the DB whet the connection is back up.
+    TODO: if influxdb is unreachable, cache the result and
+          write them to the DB when the connection is back up.
     """
 
     def __init__(
         self,
-        verify_ssl: bool = False,
-        database: str = "smartmeter",
+        url: str,
+        token: str,
+        org: str,
+        bucket: str,
+        verify_ssl: bool = True,
+        timeout: int = 30 * 1000,  # milliseconds
+        ssl_ca_cert: str = None,
     ) -> None:
 
-        self.influx_connection = None
+        self.url = url
+        self.token = token
+        self.org = org
+        self.bucket = bucket
+        self.verify_ssl = verify_ssl
+        self.timeout = timeout
+        self.ssl_ca_cert = ssl_ca_cert
 
-    def connect(self) -> None:
-        """Connect to InfluxDB."""
-
-        self.influx_connection = InfluxDBClientAsync(
-
-        )
-
-    def write(self, data: Dict) -> Tuple[bool, ...]:
+    async def write(self, data: Dict) -> Tuple[bool, ...]:
         """
-        Write a telegram to influx.
+        Write a telegram to an influx bucket.
         Return the status as a list of booleans for each datapoint written.
+        # TODO: add counters for datapoints that are successfully written!
         """
+        record_list: List = []
+        for record in self.craft_json(data):
+            record_list.append(record)
 
-        e_data: Dict
-        g_data: Dict
-        status: List[bool] = []
-
-        (e_data, g_data) = self.craft_json(data)
-
-        for (measurement, measurement_data) in [
-            ("Electricity", e_data),
-            ("Gas", g_data),
-        ]:
-
-            if (
-                self.conn.write_points(
-                    [
-                        measurement_data,
-                    ]
-                )
-                is True
-            ):
-                LOG.debug(
-                    f"{measurement} data point successfully written: {measurement_data}"
-                )
-                status.append(True)
-            else:
-                LOG.warning(f"{measurement} data point not written: {measurement_data}")
-                status.append(False)
-
-        return tuple(status)
+        async with InfluxDBClientAsync(
+            url=self.url,
+            token=self.token,
+            org=self.org,
+            timeout=self.timeout,
+            verify_ssl=self.verify_ssl,
+            ssl_ca_cert=self.ssl_ca_cert,
+        ) as db:
+            write_api = db.write_api()
+            while len(record_list) > 0:
+                data = record_list.pop(0)
+                success = await write_api.write(bucket=self.bucket, record=data)
+                if not success:
+                    LOG.warn(f"Unable to write datapoint: {data}")
+                else:
+                    LOG.debug(f"Datapoint successfully written: {data}")
 
     @staticmethod
     def craft_json(data: Dict) -> Tuple[Dict, Dict]:
         """
-        Create a valid JSON for the influxDB out of the data we got.
+        Prepare the data to be written to InfluxDB.
         """
 
-        LOG.debug("Crafting Influx JSON datapoints.")
+        LOG.debug("Crafting Influx datapoints.")
 
         # Electricity data.
         e_data = {

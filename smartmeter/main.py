@@ -8,10 +8,12 @@ from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
 import multiprocessing as mp
 from smartmeter.digimeter import read_serial
+
 # from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, StatusLed
 from smartmeter.utils import convert_from_human_readable
 from time import sleep
+
 # import asyncio
 
 

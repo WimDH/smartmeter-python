@@ -53,6 +53,7 @@ regex==2021.10.23
 requests==2.26.0
 Rx==3.2.0
 six==1.16.0
+-e git+https://gitlab.com/wimdh/smartmeter.git@7ea22e0434cd284752841d3bff6d1bf145ccf198#egg=smartmeter
 toml==0.10.2
 tomli==1.2.1
 types-python-dateutil==2.8.2
