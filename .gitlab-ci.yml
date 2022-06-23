@@ -47,9 +47,9 @@ pytest:
     reports:
       junit: report.xml
 
-#sast:
-#  stage: linting
-#  allow_failure: true
+sast:
+  stage: linting
+  allow_failure: true
 
-#include:
-#- template: Security/SAST.gitlab-ci.yml
+include:
+- template: Security/SAST.gitlab-ci.yml
