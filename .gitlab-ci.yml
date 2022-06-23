@@ -22,17 +22,10 @@ before_script:
   - virtualenv venv
   - source venv/bin/activate
   - pip install -U pip
+  - ls -l; pwd
   - pip install -r requirements.txt
   - pip install -r requirements.dev.txt
   - pip list # Display the packages that are installed.
-
-pytest:
-  stage: testing
-  script:
-    - pytest tests --junitxml=report.xml
-  artifacts:
-    reports:
-      junit: report.xml
 
 mypy:
   stage: linting
@@ -45,6 +38,14 @@ flake8:
   allow_failure: true
   script:
     - flake8 smartmeter/ tests/ setup.py
+
+pytest:
+  stage: testing
+  script:
+    - pytest tests --junitxml=report.xml
+  artifacts:
+    reports:
+      junit: report.xml
 
 #sast:
 #  stage: linting
