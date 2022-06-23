@@ -54,11 +54,11 @@ def test_loadmanager_process_no_action(monkeypatch):
     "testdata, timer_state, timer_threshold",
     [
         (
-            {"actual_total_injection": 1500, "actual_total_consumption": 0},
+            {"actual_total_injection": 2000, "actual_total_consumption": 0},
             True,
             "upper",
         ),
-        ({"actual_total_injection": 0, "actual_total_consumption": 500}, True, "lower"),
+        ({"actual_total_injection": 0, "actual_total_consumption": 700}, True, "lower"),
     ],
 )
 def test_loadmanager_set_timer(monkeypatch, testdata, timer_state, timer_threshold):

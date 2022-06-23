@@ -95,7 +95,7 @@ class Load:
 
 class Timer:
     """
-    Represents a timer that count how long the actual power crossed it's threshold.
+    Represents a timer that count how long the actual power crossed it's threshold (in seconds).
     Two thresholds are valid:
         1. "upper": the upper threshold, which defines the maximum injected power.
         2. "lower": the lower threshold, which defines the maximum consumed power.
@@ -157,7 +157,7 @@ class LoadManager:
         # Setup the load(s)
         # pin GPIO24
         self.load = Load(
-            pin=24, name="car charger", max_power=230 * 6, switch_threshold=75
+            pin=24, name="car charger", max_power=230 * 10, switch_threshold=75
         )
         self.timer = Timer()
 

@@ -7,15 +7,12 @@ import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
 import multiprocessing as mp
+# import asyncio
 from smartmeter.digimeter import read_serial
-
-# from smartmeter.influx import DbInflux
+from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, StatusLed
 from smartmeter.utils import convert_from_human_readable
 from time import sleep
-
-# import asyncio
-
 
 try:
     import gpiozero as gpio
@@ -87,13 +84,19 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
     and controls the relay and other I/O.
     """
     if influx_db_cfg:
-        pass
+        db = DbInflux(
+            url=influx_db_cfg.get(section="influx", option="url"),
+            token=influx_db_cfg.get(section="influx", option="token"),
+            org=influx_db_cfg.get(section="influx", option="org"),
+            timeout=influx_db_cfg.get(section="influx", option="timeout") or 10000,
+            verify_ssl=influx_db_cfg.get(section="influx", option="verify_ssl") or True,
+        )
 
     while True:
         if not q.empty():
             data = q.get()
-            log.debug("Got a message for the queue: {}".format(data))
-            # TODO: write to influxdb if configured.
+            log.debug("Got data for the queue: {}".format(data))
+            db.write(data)
         else:
             sleep(0.1)
 
@@ -107,7 +110,7 @@ def run_tests():
     display = Display()
     display.update_display(text="This is a\ntest message.")
 
-    # Tesing the status led.
+    # Testing the status led.
     status = StatusLed()
     status.test()
 
@@ -130,11 +133,11 @@ def main() -> None:
     args = parse_cli(sys.argv[1:])
     config = load_config(args.configfile)
     log = setup_log(
-        filename=config["logging"]["logfile"],
-        log_to_stdout=config.getboolean("logging", "log_to_stdout"),
-        keep=int(config["logging"]["keep"]),
-        size=config["logging"]["size"],
-        loglevel=config["logging"]["loglevel"],
+        filename=config.get(section="logging", option="logfile"),
+        log_to_stdout=config.getboolean(section="logging", option="log_to_stdout"),
+        keep=config.getint(section="logging", option="keep"),
+        size=config.get(section="logging", option="size"),
+        loglevel=config.get(section="logging", option="loglevel"),
     )
     log.info("---start---")
 
@@ -150,11 +153,11 @@ def main() -> None:
         log.info("---done---")
         sys.exit(result)
 
-    if config.get("influx") and config["influx"].get("enabled", True):
-        influx_cfg = config.get("influx")
+    if "influx" in config.sections and config.getboolean(section="influx", option="enabled"):
+        influx_cfg = config["influx"]
     else:
         influx_cfg = None
-        log.info("InfluxDB is disabled!")
+        log.info("InfluxDB is disabled or not configured!")
 
     msg_q: mp.Queue = mp.Queue()
 
@@ -165,11 +168,11 @@ def main() -> None:
         target=read_serial,
         args=(
             msg_q,
-            config["serial"]["port"],
-            int(config["serial"]["baudrate"]),
-            int(config["serial"]["bytesize"]),
-            config["serial"]["parity"],
-            int(config["serial"]["stopbits"]),
+            config.get(section="serial", option="port"),
+            config.get(section="serial", option="baudrate"),
+            config.getint(section="serial", option="bytesize"),
+            config.get(section="serial", option="parity"),
+            config.getint(section="serial", option="stopbits"),
         ),
     )
     serial_process.start()
