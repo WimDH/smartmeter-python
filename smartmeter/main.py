@@ -88,6 +88,7 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
             url=influx_db_cfg.get(section="influx", option="url"),
             token=influx_db_cfg.get(section="influx", option="token"),
             org=influx_db_cfg.get(section="influx", option="org"),
+            bucket=influx_db_cfg.get(section="influx", option="bucket"),
             timeout=influx_db_cfg.get(section="influx", option="timeout") or 10000,
             verify_ssl=influx_db_cfg.get(section="influx", option="verify_ssl") or True,
         )

@@ -12,7 +12,7 @@ def get_version():
 
 setup(
     name="smartmeter",
-    version="2.0.0",  # Required
+    version=get_version(),
     description="Read data from the (belgian) digital electricity meter.",
     url="https://gitlab.com/wimdh/smartmeter",
     author="Wim De Hul",
@@ -26,29 +26,13 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3 :: Only",
     ],
     keywords="digital meter, energy, electricity, power control",
     packages=find_packages(where="smartmeter"),
-    python_requires=">=3.6, <4",
-    # install_requires=["peppercorn"],  # Optional
-    # extras_require={  # Optional
-    #    "dev": ["check-manifest"],
-    #    "test": ["coverage"],
-    # },
-    # package_data={  # Optional
-    #    "sample": ["package_data.dat"],
-    # },
-    data_files=[("config.sample.ini", ["config.sample.ini"])],  # Optional
-    # To provide executable scripts, use entry points in preference to the
-    # "scripts" keyword. Entry points provide cross-platform support and allow
-    # `pip` to create the appropriate form of executable for the target
-    # platform.
-    #
-    # For example, the following would provide a command called `sample` which
-    # executes the function `main` from this package when invoked:
-    entry_points={  # Optional
+    python_requires=">=3.6, <3.9",
+    data_files=[("config.sample.ini", ["config.sample.ini"])],
+    entry_points={
         "console_scripts": [
             "smartmeter=smartmeter.main:main",
         ],

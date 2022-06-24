@@ -46,10 +46,3 @@ pytest:
   artifacts:
     reports:
       junit: report.xml
-
-sast:
-  stage: linting
-  allow_failure: true
-
-include:
-- template: Security/SAST.gitlab-ci.yml

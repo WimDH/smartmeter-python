@@ -32,11 +32,11 @@ class DbInflux:
         self.timeout = timeout
         self.ssl_ca_cert = ssl_ca_cert
 
-    async def write(self, data: Dict) -> Tuple[bool, ...]:
+    async def write(self, data: Dict) -> None:
         """
         Write a telegram to an influx bucket.
-        Return the status as a list of booleans for each datapoint written.
         # TODO: add counters for datapoints that are successfully written!
+        # TODO: return how manu records were successfully written.
         """
         record_list: List = []
         for record in self.craft_json(data):
@@ -58,6 +58,7 @@ class DbInflux:
                     LOG.warn(f"Unable to write datapoint: {data}")
                 else:
                     LOG.debug(f"Datapoint successfully written: {data}")
+
 
     @staticmethod
     def craft_json(data: Dict) -> Tuple[Dict, Dict]:
