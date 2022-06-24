@@ -154,7 +154,7 @@ def main() -> None:
         log.info("---done---")
         sys.exit(result)
 
-    if "influx" in config.sections and config.getboolean(section="influx", option="enabled"):
+    if "influx" in config.sections() and config.getboolean(section="influx", option="enabled"):
         influx_cfg = config["influx"]
     else:
         influx_cfg = None
