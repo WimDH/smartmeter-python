@@ -123,7 +123,7 @@ async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
             data = q.get()
             log.debug("Got data for the queue: {}".format(data))
         else:
-            asyncio.sleep(0.1)
+            await asyncio.sleep(0.1)
 
 
 async def display_worker(log: logging.Logger) -> None:
@@ -140,7 +140,8 @@ async def display_worker(log: logging.Logger) -> None:
             log.debug("Info button is pressed.")
             await display.cycle()
             info_activated = False
-        asyncio.sleep(0.1)
+        
+        await asyncio.sleep(0.1)
 
 
 def run_tests() -> int:
