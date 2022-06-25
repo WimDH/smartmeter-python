@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import os
 import argparse
@@ -7,10 +8,13 @@ import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
 import multiprocessing as mp
+
+from influxdb import InfluxDBClient
+
 # import asyncio
-from smartmeter.digimeter import read_serial
+from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
-from smartmeter.aux import Display, LoadManager, StatusLed
+from smartmeter.aux import Display, LoadManager, StatusLed, Buttons
 from smartmeter.utils import convert_from_human_readable
 from time import sleep
 
@@ -25,9 +29,21 @@ def parse_cli(cli_args: List) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Read and process data from the digital enery meter."
     )
-    parser.add_argument("-c", "--config", dest="configfile")
-    parser.add_argument("-T", "--test", action="store_true", dest="run_test")
-
+    parser.add_argument("-c", "--config", dest="configfile", help="The config file.")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "-T",
+        "--test",
+        action="store_true",
+        dest="run_test",
+        help="Run some hardware tests.",
+    )
+    group.add_argument(
+        "-f",
+        "--fake",
+        dest="fake_serial",
+        help="Instead of reading the data from the serial port, you can specify a file with pre recorded data.",
+    )
     return parser.parse_args(cli_args)
 
 
@@ -80,8 +96,7 @@ def setup_log(
 
 def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> None:
     """
-    This worker function sends the messages to an InfluxDB (if configured)
-    and controls the relay and other I/O.
+    Main worker to run in a separate process.
     """
     if influx_db_cfg:
         db = DbInflux(
@@ -92,17 +107,35 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
             timeout=influx_db_cfg.get(section="influx", option="timeout") or 10000,
             verify_ssl=influx_db_cfg.get(section="influx", option="verify_ssl") or True,
         )
+    else:
+        db = None
+
+    # get the eventloop
+    loop = asyncio.get_event_loop()
+    asyncio.ensure_future(queue_worker(log, q, db))
+    loop.run_forever()
+
+
+async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
+    """
+    This worker reads from the queue, controls the IO and sends the datapoints to an InfluxDB.
+    """
+
+    buttons = Buttons()
+    #display =Display()
 
     while True:
         if not q.empty():
             data = q.get()
             log.debug("Got data for the queue: {}".format(data))
-            db.write(data)
-        else:
-            sleep(0.1)
+
+        if buttons.info_button.is_pressed:
+            log.debug("Info button is pressed.")
+        if buttons.restart_button.is_pressed:
+            log.debug("Restart button is pressed.")
 
 
-def run_tests():
+def run_tests() -> int:
     """
     Run hardware tests, mostly stuff from aux.py
     return 0 is all tests are successful
@@ -123,6 +156,7 @@ def run_tests():
     display.update_display("Press the Info and\nRestart buttons\n within 10 seconds.")
 
     display.display_off()
+
     return 0
 
 
@@ -143,9 +177,17 @@ def main() -> None:
     log.info("---start---")
 
     try:
+        if os.environ["GPIOZERO_PIN_FACTORY"] == "mock":
+            log.critical("Mocking the PI! Environment variable GPIOZERO_PIN_FACTORY is set!")
+    except KeyError:
+        pass
+
+    try:
         log.info("Board info: {}".format(str(gpio.pi_info())))
     except ModuleNotFoundError:
         log.info("Board info not available.")
+    except Exception:
+        log.warning("Seems w're not runing on a pi...")
 
     if args.run_test is True:
         # Run Hardware tests
@@ -154,33 +196,50 @@ def main() -> None:
         log.info("---done---")
         sys.exit(result)
 
-    if "influx" in config.sections() and config.getboolean(section="influx", option="enabled"):
+    if "influx" in config.sections() and config.getboolean(
+        section="influx", option="enabled"
+    ):
         influx_cfg = config["influx"]
     else:
         influx_cfg = None
         log.info("InfluxDB is disabled or not configured!")
 
-    msg_q: mp.Queue = mp.Queue()
+    io_msg_q: mp.Queue = mp.Queue()
 
-    log.info(
-        "Starting serial port reader on port '{}'.".format(config["serial"]["port"])
-    )
-    serial_process = mp.Process(
-        target=read_serial,
-        args=(
-            msg_q,
-            config.get(section="serial", option="port"),
-            config.get(section="serial", option="baudrate"),
-            config.getint(section="serial", option="bytesize"),
-            config.get(section="serial", option="parity"),
-            config.getint(section="serial", option="stopbits"),
-        ),
-    )
-    serial_process.start()
+    if not args.fake_serial:
+        log.info(
+            "Starting serial port reader on port '{}'.".format(config["serial"]["port"])
+        )
+        serial_process = mp.Process(
+            target=read_serial,
+            args=(
+                io_msg_q,
+                config.get(section="serial", option="port"),
+                config.get(section="serial", option="baudrate"),
+                config.getint(section="serial", option="bytesize"),
+                config.get(section="serial", option="parity"),
+                config.getint(section="serial", option="stopbits"),
+            ),
+        )
+        serial_process.start()
+
+    else:
+        log.info("Faking serial port by reading data from {}.".format(args.fake_serial))
+        fake_serial_process = mp.Process(
+            target=fake_serial,
+            args=(
+                io_msg_q,
+                args.fake_serial,
+                False,
+                True,
+            ),
+        )
+        fake_serial_process.start()
 
     log.info("Starting worker.")
-    dispatcher_process = mp.Process(target=worker, args=(log, msg_q, influx_cfg))
+    dispatcher_process = mp.Process(target=worker, args=(log, io_msg_q, influx_cfg))
     dispatcher_process.start()
+    dispatcher_process.join()
 
 
 if __name__ == "__main__":

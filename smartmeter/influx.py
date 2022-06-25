@@ -59,7 +59,6 @@ class DbInflux:
                 else:
                     LOG.debug(f"Datapoint successfully written: {data}")
 
-
     @staticmethod
     def craft_json(data: Dict) -> Tuple[Dict, Dict]:
         """

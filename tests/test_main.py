@@ -3,11 +3,36 @@ import logging
 from smartmeter.main import parse_cli, load_config, setup_log
 
 
-def test_parse_cli() -> None:
+@pytest.mark.parametrize(
+    "cli_data, cfg_result, test_result, fake_result",
+    [
+        (
+            ["-c", "tests/testdata/sample_config.ini"],
+            "tests/testdata/sample_config.ini",
+            False,
+            None,
+        ),
+        (
+            ["-c", "tests/testdata/sample_config.ini", "-T"],
+            "tests/testdata/sample_config.ini",
+            True,
+            None,
+        ),
+        (
+            ["-c", "tests/testdata/sample_config.ini", "-f", "/home/test/blah.txt"],
+            "tests/testdata/sample_config.ini",
+            False,
+            "/home/test/blah.txt",
+        ),
+    ],
+)
+def test_parse_cli(cli_data, cfg_result, test_result, fake_result) -> None:
     """Test the parsing of the CLI options."""
-    options = parse_cli(cli_args=["-c", "tests/testdata/sample_config.ini"])
+    options = parse_cli(cli_args=cli_data)
 
-    assert options.configfile == "tests/testdata/sample_config.ini"
+    assert options.configfile == cfg_result
+    assert options.run_test == test_result
+    assert options.fake_serial == fake_result
 
 
 def test_load_config() -> None:

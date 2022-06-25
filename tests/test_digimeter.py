@@ -11,7 +11,14 @@ sys.path.append(
     os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
 )
 
-from smartmeter.digimeter import parse, autoformat, check_msg, read_serial, serial
+from smartmeter.digimeter import (
+    parse,
+    autoformat,
+    check_msg,
+    read_serial,
+    serial,
+    fake_serial,
+)
 
 ROOT_DIR = os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
 
@@ -121,3 +128,11 @@ def test_check_msg(one_msg):
     """
     msg = re.sub(b"\n", b"\r\n", one_msg.encode("ascii"))
     assert check_msg(msg) is True
+
+
+def test_fake_serial():
+    """Test reading serial data froma file."""
+    q = Queue()
+    fake_serial(q, "tests/testdata/meter_stream.txt", wait=False)
+
+    assert q.empty() is False

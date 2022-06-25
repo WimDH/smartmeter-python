@@ -246,9 +246,11 @@ class Display:
 
     def display_on(self) -> None:
         self._display.poweron()
+        self.display_is_on = True
 
     def display_off(self) -> None:
         self._display.poweroff()
+        self.display_is_on = False
 
     async def cycle(
         self,
@@ -299,6 +301,10 @@ class CurrentSensors:
         """Return current produced by the solar panels (PVV)."""
         return 0
 
+    def load_current(self) -> int:
+        """Return the current used by the load."""
+        return 0
+
 
 class Buttons:
     """
@@ -316,8 +322,6 @@ class Buttons:
         self.restart_button = gpio.Button(
             pin=27, pull_up=True, bounce_time=self.debounce_time
         )
-        self.info_is_pressed = False
-        self.restart_is_pressed = False
 
 
 class StatusLed:
