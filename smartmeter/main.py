@@ -118,15 +118,22 @@ async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
     """
 
     buttons = Buttons()
+    display = Display()
+    info_activated = False
+    restart_activated = False
 
     while True:
         if not q.empty():
             data = q.get()
             log.debug("Got data for the queue: {}".format(data))
 
-        if buttons.info_button.is_pressed:
+        if buttons.info_button.is_pressed and not info_activated:
+            info_activated = True
             log.debug("Info button is pressed.")
-        if buttons.restart_button.is_pressed:
+            await display.cycle()
+
+        if buttons.restart_button.is_pressed and not restart_activated:
+            restart_activated = True
             log.debug("Restart button is pressed.")
 
 
