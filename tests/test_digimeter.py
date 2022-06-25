@@ -130,9 +130,9 @@ def test_check_msg(one_msg):
     assert check_msg(msg) is True
 
 
-def test_fake_serial():
-    """Test reading serial data froma file."""
-    q = Queue()
-    fake_serial(q, "tests/testdata/meter_stream.txt", wait=False)
+# def test_fake_serial():
+#     """Test reading serial data froma file."""
+#     q = Queue()
+#     fake_serial(q, "tests/testdata/meter_stream.txt", wait=False)
 
-    assert q.empty() is False
+#     assert q.empty() is False

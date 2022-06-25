@@ -11,7 +11,7 @@ import multiprocessing as mp
 from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, StatusLed, Buttons
-from smartmeter.utils import convert_from_human_readable
+from smartmeter.utils import convert_from_human_readable, Cache
 
 
 try:
@@ -115,13 +115,16 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
 
 async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
     """
-    This worker reads from the queue, controls the IO and sends the datapoints to an InfluxDB.
+    This worker reads from the queue, controls the load and sends the datapoints to an InfluxDB.
     """
 
     while True:
         if not q.empty():
             data = q.get()
-            log.debug("Got data for the queue: {}".format(data))
+            log.debug("Got data from the queue: {}".format(data))
+            if db:
+                log.debug("Writing data to Influx at {}.".format(db.url))
+                await db.write(data)
         else:
             await asyncio.sleep(0.1)
 
@@ -138,9 +141,10 @@ async def display_worker(log: logging.Logger) -> None:
         if buttons.info_button.is_pressed and not info_activated:
             info_activated = True
             log.debug("Info button is pressed.")
-            await display.cycle()
+            await display.cycle(
+            )
             info_activated = False
-        
+ 
         await asyncio.sleep(0.1)
 
 

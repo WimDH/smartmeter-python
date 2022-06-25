@@ -80,3 +80,18 @@ def convert_from_human_readable(value: Union[str, int]) -> int:
         return int(value[:-1]) * (1024 ** power.get(value[-1], 0))
     else:
         raise ValueError(f"'{value}' is an unknown value.")
+
+
+class Borg:
+    """ A Borg Singleton."""
+    _shared_state = {}
+
+    def __init__(self) -> None:
+        self.__dict__ = self._shared_state
+
+
+class Cache(Borg):
+    """ An object to cache the latest meter data and various states and measured values."""
+    def __init__(self, data) -> None:
+        Borg.__init__(self)
+        self.data = data
