@@ -109,6 +109,7 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
     # get the eventloop
     loop = asyncio.get_event_loop()
     asyncio.ensure_future(queue_worker(log, q, db))
+    asyncio.ensure_future(display_worker(log))
     loop.run_forever()
 
 
@@ -117,24 +118,29 @@ async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
     This worker reads from the queue, controls the IO and sends the datapoints to an InfluxDB.
     """
 
-    buttons = Buttons()
-    display = Display()
-    info_activated = False
-    restart_activated = False
-
     while True:
         if not q.empty():
             data = q.get()
             log.debug("Got data for the queue: {}".format(data))
+        else:
+            asyncio.sleep(0.1)
 
+
+async def display_worker(log: logging.Logger) -> None:
+    """
+    Displaying data what the inof button is pressed.
+    """
+    buttons = Buttons()
+    display = Display()
+    info_activated = False
+
+    while True:
         if buttons.info_button.is_pressed and not info_activated:
             info_activated = True
             log.debug("Info button is pressed.")
             await display.cycle()
-
-        if buttons.restart_button.is_pressed and not restart_activated:
-            restart_activated = True
-            log.debug("Restart button is pressed.")
+            info_activated = False
+        asyncio.sleep(0.1)
 
 
 def run_tests() -> int:
