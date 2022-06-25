@@ -11,7 +11,7 @@ import multiprocessing as mp
 from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, StatusLed, Buttons
-from smartmeter.utils import convert_from_human_readable, Cache
+from smartmeter.utils import convert_from_human_readable
 
 
 try:
@@ -144,7 +144,7 @@ async def display_worker(log: logging.Logger) -> None:
             await display.cycle(
             )
             info_activated = False
- 
+
         await asyncio.sleep(0.1)
 
 
