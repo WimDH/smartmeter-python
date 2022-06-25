@@ -283,6 +283,7 @@ class Display:
             for t in text:
                 self.update_display(text=t)
                 await asyncio.sleep(wait)
+            cnt += 1
 
         self.display_off
 
