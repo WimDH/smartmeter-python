@@ -285,7 +285,7 @@ class Display:
                 await asyncio.sleep(wait)
             cnt += 1
 
-        self.display_off
+        self.display_off()
 
 
 class CurrentSensors:
