@@ -8,15 +8,11 @@ import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
 import multiprocessing as mp
-
-from influxdb import InfluxDBClient
-
-# import asyncio
 from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, StatusLed, Buttons
 from smartmeter.utils import convert_from_human_readable
-from time import sleep
+
 
 try:
     import gpiozero as gpio
@@ -122,7 +118,6 @@ async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
     """
 
     buttons = Buttons()
-    #display =Display()
 
     while True:
         if not q.empty():
