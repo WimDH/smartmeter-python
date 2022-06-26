@@ -105,26 +105,30 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
     """
     Main worker to run in a separate process.
     """
-    if influx_db_cfg:
-        db = DbInflux(
-            url=influx_db_cfg.get("url"),
-            token=influx_db_cfg.get("token"),
-            org=influx_db_cfg.get("org"),
-            bucket=influx_db_cfg.get("bucket"),
-            timeout=influx_db_cfg.get("timeout", 10000),
-            verify_ssl=influx_db_cfg.get("verify_ssl", True)
-        )
-    else:
-        db = None
+    try:
+        if influx_db_cfg:
+            db = DbInflux(
+                url=influx_db_cfg.get("url"),
+                token=influx_db_cfg.get("token"),
+                org=influx_db_cfg.get("org"),
+                bucket=influx_db_cfg.get("bucket"),
+                timeout=influx_db_cfg.get("timeout", 10000),
+                verify_ssl=influx_db_cfg.get("verify_ssl", True)
+            )
+        else:
+            db = None
 
-    # get the eventloop
-    loop = asyncio.get_event_loop()
-    asyncio.ensure_future(queue_worker(log, q, db))
-    if not not_on_a_pi():
-        # This only makes sense if we have the hardware connected.
-        asyncio.ensure_future(display_worker(log))
+        # get the eventloop
+        loop = asyncio.get_event_loop()
+        asyncio.ensure_future(queue_worker(log, q, db))
+        if not not_on_a_pi():
+            # This only makes sense if we have the hardware connected.
+            asyncio.ensure_future(display_worker(log))
 
-    loop.run_forever()
+        loop.run_forever()
+    
+    except Exception:
+        log.exception("Uncaught exception from worker process!")
 
 
 async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
