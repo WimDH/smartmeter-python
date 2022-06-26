@@ -131,15 +131,23 @@ async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
     """
     This worker reads from the queue, controls the load and sends the datapoints to an InfluxDB.
     """
+    load = LoadManager()
 
     while True:
         try:
             if not q.empty():
                 data = q.get()
+
                 log.debug("Got data from the queue: {}".format(data))
                 if db:
                     log.debug("Writing data to Influx at {}.".format(db.url))
                     await db.write(data)
+
+                log.debug("See if we have to switch the connected load.")
+                load.process(data)
+
+                # TODO: Update status LED.
+
             else:
                 await asyncio.sleep(0.1)
 
