@@ -105,30 +105,26 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
     """
     Main worker to run in a separate process.
     """
-    try:
-        if influx_db_cfg:
-            db = DbInflux(
-                url=influx_db_cfg.get("url"),
-                token=influx_db_cfg.get("token"),
-                org=influx_db_cfg.get("org"),
-                bucket=influx_db_cfg.get("bucket"),
-                timeout=influx_db_cfg.get("timeout", 10000),
-                verify_ssl=influx_db_cfg.get("verify_ssl", True)
-            )
-        else:
-            db = None
+    if influx_db_cfg:
+        db = DbInflux(
+            url=influx_db_cfg.get("url"),
+            token=influx_db_cfg.get("token"),
+            org=influx_db_cfg.get("org"),
+            bucket=influx_db_cfg.get("bucket"),
+            timeout=influx_db_cfg.get("timeout", 10000),
+            verify_ssl=influx_db_cfg.get("verify_ssl", True)
+        )
+    else:
+        db = None
 
-        # get the eventloop
-        loop = asyncio.get_event_loop()
-        asyncio.ensure_future(queue_worker(log, q, db))
-        if not not_on_a_pi():
-            # This only makes sense if we have the hardware connected.
-            asyncio.ensure_future(display_worker(log))
+    # get the eventloop
+    loop = asyncio.get_event_loop()
+    asyncio.ensure_future(queue_worker(log, q, db))
+    if not not_on_a_pi():
+        # This only makes sense if we have the hardware connected.
+        asyncio.ensure_future(display_worker(log))
 
-        loop.run_forever()
-    
-    except Exception:
-        log.exception("Uncaught exception from worker process!")
+    loop.run_forever()
 
 
 async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
@@ -137,13 +133,18 @@ async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
     """
 
     while True:
-        if not q.empty():
-            data = q.get()
-            log.debug("Got data from the queue: {}".format(data))
-            if db:
-                log.debug("Writing data to Influx at {}.".format(db.url))
-                await db.write(data)
-        else:
+        try:
+            if not q.empty():
+                data = q.get()
+                log.debug("Got data from the queue: {}".format(data))
+                if db:
+                    log.debug("Writing data to Influx at {}.".format(db.url))
+                    await db.write(data)
+            else:
+                await asyncio.sleep(0.1)
+
+        except Exception:
+            log.exception("Uncaught exception in queue worker!")
             await asyncio.sleep(0.1)
 
 
@@ -156,11 +157,16 @@ async def display_worker(log: logging.Logger) -> None:
     info_activated = False
 
     while True:
-        if buttons.info_button.is_pressed and not info_activated:
-            info_activated = True
-            log.debug("Info button is pressed.")
-            await display.cycle(
-            )
+        try:
+            if buttons.info_button.is_pressed and not info_activated:
+                info_activated = True
+                log.debug("Info button is pressed.")
+                await display.cycle(
+                )
+                info_activated = False
+
+        except Exception:
+            log.exception("Uncaught exception in queue worker!")
             info_activated = False
 
         await asyncio.sleep(0.1)
