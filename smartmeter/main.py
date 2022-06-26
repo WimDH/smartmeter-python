@@ -20,6 +20,17 @@ except ImportError:
     pass
 
 
+def not_on_a_pi():
+    """ Report if we are not a Raspberry PI."""
+    try:
+        if os.environ["GPIOZERO_PIN_FACTORY"] == "mock":
+            return True
+    except KeyError:
+        pass
+
+    return False
+
+
 def parse_cli(cli_args: List) -> argparse.Namespace:
     """Process the CLI arguments."""
     parser = argparse.ArgumentParser(
@@ -96,12 +107,12 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
     """
     if influx_db_cfg:
         db = DbInflux(
-            url=influx_db_cfg.get(section="influx", option="url"),
-            token=influx_db_cfg.get(section="influx", option="token"),
-            org=influx_db_cfg.get(section="influx", option="org"),
-            bucket=influx_db_cfg.get(section="influx", option="bucket"),
-            timeout=influx_db_cfg.get(section="influx", option="timeout") or 10000,
-            verify_ssl=influx_db_cfg.get(section="influx", option="verify_ssl") or True,
+            url=influx_db_cfg.get("url"),
+            token=influx_db_cfg.get("token"),
+            org=influx_db_cfg.get("org"),
+            bucket=influx_db_cfg.get("bucket"),
+            timeout=influx_db_cfg.get("timeout", 10000),
+            verify_ssl=influx_db_cfg.get("verify_ssl", True)
         )
     else:
         db = None
@@ -109,7 +120,10 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
     # get the eventloop
     loop = asyncio.get_event_loop()
     asyncio.ensure_future(queue_worker(log, q, db))
-    asyncio.ensure_future(display_worker(log))
+    if not not_on_a_pi():
+        # This only makes sense if we have the hardware connected.
+        asyncio.ensure_future(display_worker(log))
+
     loop.run_forever()
 
 
@@ -151,7 +165,8 @@ async def display_worker(log: logging.Logger) -> None:
 def run_tests() -> int:
     """
     Run hardware tests, mostly stuff from aux.py
-    return 0 is all tests are successful
+    return 0 is all tests are successful.
+    # TODO: test the buttons.
     """
     # Testing the oled display.
     display = Display()
@@ -164,9 +179,6 @@ def run_tests() -> int:
     # Test the load.
     load = LoadManager()
     load.test_load()
-
-    # Test the Buttons
-    display.update_display("Press the Info and\nRestart buttons\n within 10 seconds.")
 
     display.display_off()
 
@@ -189,18 +201,10 @@ def main() -> None:
     )
     log.info("---start---")
 
-    try:
-        if os.environ["GPIOZERO_PIN_FACTORY"] == "mock":
-            log.critical("Mocking the PI! Environment variable GPIOZERO_PIN_FACTORY is set!")
-    except KeyError:
-        pass
+    if not_on_a_pi():
+        log.critical("It seems we are not running on a Raspberry PI! Some data is mocked!")
 
-    try:
-        log.info("Board info: {}".format(str(gpio.pi_info())))
-    except ModuleNotFoundError:
-        log.info("Board info not available.")
-    except Exception:
-        log.warning("Seems w're not runing on a pi...")
+    log.info("Board info: {}".format(str(gpio.pi_info())))
 
     if args.run_test is True:
         # Run Hardware tests
@@ -213,6 +217,7 @@ def main() -> None:
         section="influx", option="enabled"
     ):
         influx_cfg = config["influx"]
+        log.debug("InfluxDB is configured at {}".format(influx_cfg["url"]))
     else:
         influx_cfg = None
         log.info("InfluxDB is disabled or not configured!")

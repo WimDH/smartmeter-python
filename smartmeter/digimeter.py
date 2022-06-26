@@ -161,16 +161,15 @@ def fake_serial(msg_q: Queue, filename: str, run_forever: bool = False, wait: bo
                 line = fh.readline()
 
                 if START_OF_TELEGRAM.search(line):
-                    telegram = ""
+                    telegram = line
+                else:
+                    telegram += line
 
                 if END_OF_TELEGRAM.search(line):
                     queue_data = parse(telegram)
                     msg_q.put(queue_data)
                     if wait is True:
                         sleep(1)
-
-                telegram += line
-                next(fh)
 
             except StopIteration:
                 break
