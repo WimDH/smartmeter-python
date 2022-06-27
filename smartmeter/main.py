@@ -132,7 +132,9 @@ def worker(
     loop.run_forever()
 
 
-async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux, load: LoadManager) -> None:
+async def queue_worker(
+    log: logging.Logger, q: mp.Queue, db: DbInflux, load: LoadManager
+) -> None:
     """
     This worker reads from the queue, controls the load and sends the datapoints to an InfluxDB.
     # TODO: Update status LED.
@@ -214,13 +216,14 @@ def main() -> None:
         influx_cfg = None
         log.info("InfluxDB is disabled or not configured!")
 
-    if "load" in config.sections() and config.getboolean(section="load", option="enabled"):
+    if "load" in config.sections() and config.getboolean(
+        section="load", option="enabled"
+    ):
         load_cfg = config["load"]
         log.debug("Load management is enabled.")
     else:
         load_cfg = None
         log.info("Load management is disabled or not configured!")
-
 
     io_msg_q: mp.Queue = mp.Queue()
 
@@ -255,7 +258,9 @@ def main() -> None:
         fake_serial_process.start()
 
     log.info("Starting worker.")
-    dispatcher_process = mp.Process(target=worker, args=(log, io_msg_q, influx_cfg, load_cfg))
+    dispatcher_process = mp.Process(
+        target=worker, args=(log, io_msg_q, influx_cfg, load_cfg)
+    )
     dispatcher_process.start()
     dispatcher_process.join()
 
