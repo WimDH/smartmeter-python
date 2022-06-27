@@ -117,10 +117,10 @@ def worker(
 
     if load_cfg:
         load = LoadManager(
-            max_consume=load_cfg.get("max_consume"),
-            max_inject=load_cfg.get("max_inject"),
-            lower_threshold=load_cfg.get("lower_treshold"),
-            upper_treshold=load_cfg.get("upper_treshold"),
+            max_consume=load_cfg.getint("max_consume"),
+            max_inject=load_cfg.getint("max_inject"),
+            lower_threshold=load_cfg.getint("lower_treshold"),
+            upper_treshold=load_cfg.getint("upper_treshold"),
         )
 
     loop = asyncio.get_event_loop()

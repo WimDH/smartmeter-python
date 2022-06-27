@@ -28,16 +28,13 @@ class Load:
     switch_threshold is expressed in percent and represents the amount of power that has to come from the solar panels.
     """
 
-    def __init__(
-        self, pin: int, name: str, max_power: int, switch_threshold: int
-    ) -> None:
+    def __init__(self, pin: int, name: str, max_power: int) -> None:
         self._load = gpio.DigitalOutputDevice(
             pin=pin, initial_value=False
         )  # See pin numbering
         self.gpio_pin: int = pin
         self.name: str = name
         self.max_power: float = max_power
-        self.switch_threshold: int = switch_threshold
         self.state_start_time: Optional[float] = None
 
     @property
@@ -184,7 +181,9 @@ class LoadManager:
             self.timer.start(threshold="lower")
 
         # Reset the timer if the actual power is between the max injected and max_consumed.
-        if self.timer.is_started and (actual_injected < self.max_inject or actual_consumed < self.max_consume):
+        if self.timer.is_started and (
+            actual_injected < self.max_inject or actual_consumed < self.max_consume
+        ):
             self.timer.reset()
 
         # Switch on load.
