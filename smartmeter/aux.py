@@ -153,9 +153,19 @@ class Timer:
 class LoadManager:
     """Manages a connected load."""
 
-    def __init__(self) -> None:
-        # Setup the load(s)
+    def __init__(
+        self,
+        max_consume: int,
+        max_inject: int,
+        lower_threshold: int,
+        upper_treshold: int,
+    ) -> None:
+        # Setup the load
         # pin GPIO24
+        self.max_consume = max_consume
+        self.max_inject = max_inject
+        self.lower_treshold = lower_threshold
+        self.upper_treshold = upper_treshold
         self.load = Load(
             pin=24, name="car charger", max_power=230 * 10, switch_threshold=75
         )

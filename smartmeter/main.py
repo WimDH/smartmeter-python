@@ -10,7 +10,7 @@ from coloredlogs import ColoredFormatter
 import multiprocessing as mp
 from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
-from smartmeter.aux import Display, LoadManager, StatusLed, Buttons
+from smartmeter.aux import Display, LoadManager, Buttons
 from smartmeter.utils import convert_from_human_readable
 
 
@@ -21,7 +21,7 @@ except ImportError:
 
 
 def not_on_a_pi():
-    """ Report if we are not a Raspberry PI."""
+    """Report if we are not a Raspberry PI."""
     try:
         if os.environ["GPIOZERO_PIN_FACTORY"] == "mock":
             return True
@@ -37,15 +37,7 @@ def parse_cli(cli_args: List) -> argparse.Namespace:
         description="Read and process data from the digital enery meter."
     )
     parser.add_argument("-c", "--config", dest="configfile", help="The config file.")
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument(
-        "-T",
-        "--test",
-        action="store_true",
-        dest="run_test",
-        help="Run some hardware tests.",
-    )
-    group.add_argument(
+    parser.add_argument(
         "-f",
         "--fake",
         dest="fake_serial",
@@ -101,10 +93,18 @@ def setup_log(
     return logger
 
 
-def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> None:
+def worker(
+    log: logging.Logger,
+    q: mp.Queue,
+    influx_db_cfg: Optional[Dict],
+    load_cfg: Optional[Dict],
+) -> None:
     """
     Main worker to run in a separate process.
     """
+    db = None
+    load = None
+
     if influx_db_cfg:
         db = DbInflux(
             url=influx_db_cfg.get("url"),
@@ -112,14 +112,19 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
             org=influx_db_cfg.get("org"),
             bucket=influx_db_cfg.get("bucket"),
             timeout=influx_db_cfg.get("timeout", 10000),
-            verify_ssl=influx_db_cfg.get("verify_ssl", True)
+            verify_ssl=influx_db_cfg.get("verify_ssl", True),
         )
-    else:
-        db = None
 
-    # get the eventloop
+    if load_cfg:
+        load = LoadManager(
+            max_consume=load_cfg.get("max_consume"),
+            max_inject=load_cfg.get("max_inject"),
+            lower_threshold=load_cfg.get("lower_treshold"),
+            upper_treshold=load_cfg.get("upper_treshold"),
+        )
+
     loop = asyncio.get_event_loop()
-    asyncio.ensure_future(queue_worker(log, q, db))
+    asyncio.ensure_future(queue_worker(log, q, db, load))
     if not not_on_a_pi():
         # This only makes sense if we have the hardware connected.
         asyncio.ensure_future(display_worker(log))
@@ -127,11 +132,11 @@ def worker(log: logging.Logger, q: mp.Queue, influx_db_cfg: Optional[Dict]) -> N
     loop.run_forever()
 
 
-async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
+async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux, load: LoadManager) -> None:
     """
     This worker reads from the queue, controls the load and sends the datapoints to an InfluxDB.
+    # TODO: Update status LED.
     """
-    load = LoadManager()
 
     while True:
         try:
@@ -145,8 +150,6 @@ async def queue_worker(log: logging.Logger, q: mp.Queue, db: DbInflux) -> None:
 
                 log.debug("See if we have to switch the connected load.")
                 load.process(data)
-
-                # TODO: Update status LED.
 
             else:
                 await asyncio.sleep(0.1)
@@ -169,38 +172,14 @@ async def display_worker(log: logging.Logger) -> None:
             if buttons.info_button.is_pressed and not info_activated:
                 info_activated = True
                 log.debug("Info button is pressed.")
-                await display.cycle(
-                )
+                await display.cycle()
                 info_activated = False
 
         except Exception:
-            log.exception("Uncaught exception in queue worker!")
+            log.exception("Uncaught exception in display worker!")
             info_activated = False
 
         await asyncio.sleep(0.1)
-
-
-def run_tests() -> int:
-    """
-    Run hardware tests, mostly stuff from aux.py
-    return 0 is all tests are successful.
-    # TODO: test the buttons.
-    """
-    # Testing the oled display.
-    display = Display()
-    display.update_display(text="This is a\ntest message.")
-
-    # Testing the status led.
-    status = StatusLed()
-    status.test()
-
-    # Test the load.
-    load = LoadManager()
-    load.test_load()
-
-    display.display_off()
-
-    return 0
 
 
 def main() -> None:
@@ -220,16 +199,11 @@ def main() -> None:
     log.info("---start---")
 
     if not_on_a_pi():
-        log.critical("It seems we are not running on a Raspberry PI! Some data is mocked!")
+        log.critical(
+            "It seems we are not running on a Raspberry PI! Some data is mocked!"
+        )
 
     log.info("Board info: {}".format(str(gpio.pi_info())))
-
-    if args.run_test is True:
-        # Run Hardware tests
-        result = run_tests()
-        log.debug("Running hardware tests.")
-        log.info("---done---")
-        sys.exit(result)
 
     if "influx" in config.sections() and config.getboolean(
         section="influx", option="enabled"

@@ -150,7 +150,9 @@ def read_serial(
                 break
 
 
-def fake_serial(msg_q: Queue, filename: str, run_forever: bool = False, wait: bool = True) -> None:
+def fake_serial(
+    msg_q: Queue, filename: str, run_forever: bool = False, wait: bool = True
+) -> None:
     """Read data from a file. If run_forever is True, restart when EOF is reached."""
 
     LOG.debug("Running fake serial.")
@@ -176,6 +178,6 @@ def fake_serial(msg_q: Queue, filename: str, run_forever: bool = False, wait: bo
 
     while True:
         if msg_q.empty():
-            LOG.debug('The queue is empty...')
+            LOG.debug("The queue is empty...")
             break
         sleep(1)

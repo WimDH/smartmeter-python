@@ -83,7 +83,8 @@ def convert_from_human_readable(value: Union[str, int]) -> int:
 
 
 class Borg:
-    """ A Borg Singleton."""
+    """A Borg Singleton."""
+
     _shared_state = {}
 
     def __init__(self) -> None:
@@ -91,7 +92,8 @@ class Borg:
 
 
 class Cache(Borg):
-    """ An object to cache the latest meter data and various states and measured values."""
+    """An object to cache the latest meter data and various states and measured values."""
+
     def __init__(self, data) -> None:
         Borg.__init__(self)
         self.data = data
