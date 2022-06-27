@@ -144,15 +144,11 @@ class LoadManager:
         self,
         max_consume: int,
         max_inject: int,
-        lower_threshold: int,
-        upper_treshold: int,
     ) -> None:
         # Setup the load
         # pin GPIO24
         self.max_consume = max_consume
         self.max_inject = max_inject
-        self.lower_treshold = lower_threshold
-        self.upper_treshold = upper_treshold
         self.load = Load(pin=24, name="car charger", max_power=230 * 10)
         self.timer = Timer()
 
@@ -166,37 +162,29 @@ class LoadManager:
             f"Load manager: Processing data: actual injected={actual_injected}W, actual consumed={actual_consumed}W."
         )
 
-        # Start the timer if the actual power is crossing max power to inject.
-        if not self.timer.is_started and actual_injected >= self.max_inject:
-            LOG.debug(
-                "Loadmanager: upper threshold crossed, started the stablity timer."
-            )
-            self.timer.start(threshold="upper")
+        # # Start the timer if the actual power is crossing max power to inject.
+        # if not self.timer.is_started and actual_injected >= self.max_inject:
+        #     LOG.debug(
+        #         "Loadmanager: upper threshold crossed, started the stablity timer."
+        #     )
+        #     self.timer.start(threshold="upper")
 
-        # Start the timer if the actual power is crossing max power to consume.
-        if not self.timer.is_started and actual_consumed >= self.max_consume:
-            LOG.debug(
-                "Loadmanager: lower threshold crossed, started the stablity timer."
-            )
-            self.timer.start(threshold="lower")
-
-        # Reset the timer if the actual power is between the max injected and max_consumed.
-        if self.timer.is_started and (
-            actual_injected < self.max_inject or actual_consumed < self.max_consume
-        ):
-            self.timer.reset()
+        # # Start the timer if the actual power is crossing max power to consume.
+        # if not self.timer.is_started and actual_consumed >= self.max_consume:
+        #     LOG.debug(
+        #         "Loadmanager: lower threshold crossed, started the stablity timer."
+        #     )
+        #     self.timer.start(threshold="lower")
 
         # Switch on load.
-        # If the elapsed time of the stability timer is more than 5 minutes.
-        if self.timer.elapsed > 300 and actual_injected > self.max_inject:
-            LOG.info("Loadmanager: switching the load on.")
+        if actual_injected > self.max_inject:
+            LOG.info("Loadmanager: switching the load ON.")
             self.load.on()
             self.timer.stop()
 
         # Switch off load.
-        # If the elapsed time of the stability timer is more than 5 minutes.
-        if self.timer.elapsed > 300 and actual_consumed >= self.max_consume:
-            LOG.info("Loadmanager: switching the load off.")
+        if actual_consumed >= self.max_consume:
+            LOG.info("Loadmanager: switching the load OFF.")
             self.load.off()
             self.timer.stop()
 
