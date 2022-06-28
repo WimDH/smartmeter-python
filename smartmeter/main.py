@@ -155,12 +155,14 @@ async def queue_worker(
                 data = q.get()
 
                 log.debug("Got data from the queue: {}".format(data))
+                
                 if db:
-                    log.debug("Writing data to Influx at {}.".format(db.url))
+                    # Writing data to InfluxDB
                     await db.write(data)
 
-                log.debug("See if we have to switch the connected load.")
-                load.process(data)
+                if load:
+                    # See if we have to switch the connected load.
+                    load.process(data)
 
             else:
                 await asyncio.sleep(0.1)
@@ -214,7 +216,7 @@ def main() -> None:
             "It seems we are not running on a Raspberry PI! Some data is mocked!"
         )
 
-    log.info("Board info: {}".format(str(gpio.pi_info())))
+    log.indebugfo("Board info: {}".format(str(gpio.pi_info())))
 
     if "influx" in config.sections() and config.getboolean(
         section="influx", option="enabled"
@@ -275,7 +277,8 @@ def main() -> None:
 
 
 signal.signal(signal.SIGINT, stopall_handler)
-signal.signal(signal.SIGKILL, stopall_handler)
 signal.signal(signal.SIGTERM, stopall_handler)
+signal.signal(signal.SIGHUP, stopall_handler)
+
 if __name__ == "__main__":
     main()
