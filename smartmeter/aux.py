@@ -177,13 +177,13 @@ class LoadManager:
         #     self.timer.start(threshold="lower")
 
         # Switch on load.
-        if actual_injected > self.max_inject:
+        if actual_injected > self.max_inject and self.load.status == 0:
             LOG.info("Loadmanager: switching the load ON.")
             self.load.on()
             self.timer.stop()
 
         # Switch off load.
-        if actual_consumed >= self.max_consume:
+        if actual_consumed >= self.max_consume and self.load.status == 1:
             LOG.info("Loadmanager: switching the load OFF.")
             self.load.off()
             self.timer.stop()

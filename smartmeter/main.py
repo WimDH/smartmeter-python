@@ -1,3 +1,4 @@
+import signal
 import asyncio
 import sys
 import os
@@ -18,6 +19,16 @@ try:
     import gpiozero as gpio
 except ImportError:
     pass
+
+
+LOG = logging.getLogger(".")
+
+
+def stopall_handler(signum, frame):
+    """Stops all processes and swicthes off the load and clears the display."""
+    LOG.critical("Signal handler called with signal {}".format(signum))
+    LOG.info("---shutdown---")
+    sys.exit(0)
 
 
 def not_on_a_pi():
@@ -118,7 +129,7 @@ def worker(
     if load_cfg:
         load = LoadManager(
             max_consume=load_cfg.getint("max_consume"),
-            max_inject=load_cfg.getint("max_inject")
+            max_inject=load_cfg.getint("max_inject"),
         )
 
     loop = asyncio.get_event_loop()
@@ -262,6 +273,9 @@ def main() -> None:
     dispatcher_process.start()
     dispatcher_process.join()
 
+
+for sig in [signal.SIGINT, signal.SIGKILL, signal.SIGTERM]:
+    signal.signal(sig, stopall_handler)
 
 if __name__ == "__main__":
     main()
