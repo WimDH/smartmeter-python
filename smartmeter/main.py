@@ -274,8 +274,8 @@ def main() -> None:
     dispatcher_process.join()
 
 
-for sig in [signal.SIGINT, signal.SIGKILL, signal.SIGTERM]:
-    signal.signal(sig, stopall_handler)
-
+signal.signal(signal.SIGINT, stopall_handler)
+signal.signal(signal.SIGKILL, stopall_handler)
+signal.signal(signal.SIGTERM, stopall_handler)
 if __name__ == "__main__":
     main()
