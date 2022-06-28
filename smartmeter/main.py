@@ -216,7 +216,7 @@ def main() -> None:
             "It seems we are not running on a Raspberry PI! Some data is mocked!"
         )
 
-    log.indebugfo("Board info: {}".format(str(gpio.pi_info())))
+    log.debug("Board info: {}".format(str(gpio.pi_info())))
 
     if "influx" in config.sections() and config.getboolean(
         section="influx", option="enabled"
