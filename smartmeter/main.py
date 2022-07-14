@@ -130,6 +130,8 @@ def worker(
         load = LoadManager(
             max_consume=load_cfg.getint("max_consume"),
             max_inject=load_cfg.getint("max_inject"),
+            consume_time=load_cfg.getint("consume_time"),
+            inject_time=load_cfg.getint("inject_time")
         )
 
     loop = asyncio.get_event_loop()
@@ -155,7 +157,7 @@ async def queue_worker(
                 data = q.get()
 
                 log.debug("Got data from the queue: {}".format(data))
-                
+
                 if db:
                     # Writing data to InfluxDB
                     await db.write(data)

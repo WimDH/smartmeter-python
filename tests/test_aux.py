@@ -2,9 +2,9 @@ import pytest
 import sys
 import os
 import pathlib
-from gpiozero import Device, DigitalOutputDevice
+from gpiozero import Device
 from gpiozero.pins.mock import MockFactory
-from time import time, sleep
+from time import sleep
 
 sys.path.append(
     os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
@@ -23,104 +23,69 @@ def test_timer_elapsec_when_not_started():
     assert t.elapsed == -1
 
 
-def test_load_switch_on_off_power():
-    """"""
-    load = Load(pin=1, name="test", max_power=1000, switch_threshold=80)
-
-    assert load.switch_on_power == 800
-    assert load.switch_off_power == 200
-
-
-def test_loadmanager_process_no_action(monkeypatch):
+@pytest.mark.parametrize("result",  [True, False])
+def test_load_status(result):
     """
-    Test if we process data that is between both thresholds:
-        - timer is not set
-        - load is not swicthed on
-    Start conditions:
-        - timer is not set
-        - load is off
+    Test if we can get the status of the load: 1 if the load is on, 0 if the load is off.
+    Also test if we can get the is_on and is_off values.
     """
-    testdata = {"actual_total_injection": 10, "actual_total_consumption": 0}
-    monkeypatch.setattr(gpio, "DigitalOutputDevice", DigitalOutputDevice)
+    load = Load(pin=24, name="test load", max_power=2300)
 
-    lm = LoadManager()
-    lm.process(data=testdata)
-
-    assert lm.timer.is_started is False
-    assert lm.timer.elapsed == -1
+    load.on() if result is True else load.off
+    assert load.status == (1 if result else 0)
+    assert load.is_on == result
+    assert load.is_off is not result
 
 
-@pytest.mark.parametrize(
-    "testdata, timer_state, timer_threshold",
-    [
-        (
-            {"actual_total_injection": 2000, "actual_total_consumption": 0},
-            True,
-            "upper",
-        ),
-        ({"actual_total_injection": 0, "actual_total_consumption": 700}, True, "lower"),
-    ],
-)
-def test_loadmanager_set_timer(monkeypatch, testdata, timer_state, timer_threshold):
+def test_loadmanager():
     """
-    Test if the timer is started when we cross the upper or lower threshold.
+    Test the loadmanager.
     """
-    monkeypatch.setattr(gpio, "DigitalOutputDevice", DigitalOutputDevice)
+    lm = LoadManager(
+        max_consume=500,  # Watt
+        max_inject=1500,  # Watt
+        consume_time=3,  # seconds
+        inject_time=3    # seconds
+    )
 
-    lm = LoadManager()
-    lm.process(data=testdata)
-
-    assert lm.timer.is_started is timer_state
-    assert lm.timer.threshold == timer_threshold
+    lm.process(data={"actual_total_injection": 2, "actual_total_consumption": 0})
+    assert lm.timer.is_started is True
+    assert lm.timer.timer_type == "inject"
     sleep(1)
     assert lm.timer.elapsed >= 1
 
-
-@pytest.mark.parametrize(
-    "testdata, timer_state",
-    [
-        ({"actual_total_injection": 900, "actual_total_consumption": 0}, True),
-        ({"actual_total_injection": 0, "actual_total_consumption": 50}, True),
-    ],
-)
-def test_loadmanager_reset_timer(monkeypatch, testdata, timer_state):
-    """
-    Test if the timer is reset when we are crossing the previously set threshold.
-    """
-    monkeypatch.setattr(gpio, "DigitalOutputDevice", DigitalOutputDevice)
-
-    lm = LoadManager()
-    lm.timer._start_time = time() - 100
-    lm.process(data=testdata)
-
-    assert lm.timer.is_started is timer_state
+    lm.process(data={"actual_total_injection": 1, "actual_total_consumption": 0})
+    assert lm.timer.is_started is True
+    assert lm.timer.timer_type == "inject"
     assert lm.timer.elapsed < 1
 
+    lm.process(data={"actual_total_injection": 2, "actual_total_consumption": 0})
+    sleep(3)
 
-@pytest.mark.parametrize(
-    "testdata, time_delta, load_initial_state, load_state",
-    [
-        ({"actual_total_injection": 2000, "actual_total_consumption": 0}, 0, 0, 0),
-        ({"actual_total_injection": 2000, "actual_total_consumption": 0}, 310, 0, 1),
-        ({"actual_total_injection": 100, "actual_total_consumption": 0}, 0, 0, 0),
-        ({"actual_total_injection": 100, "actual_total_consumption": 0}, 310, 0, 0),
-        ({"actual_total_injection": 0, "actual_total_consumption": 1000}, 0, 1, 1),
-        ({"actual_total_injection": 0, "actual_total_consumption": 1000}, 310, 1, 0),
-        ({"actual_total_injection": 0, "actual_total_consumption": 10}, 0, 1, 1),
-        ({"actual_total_injection": 0, "actual_total_consumption": 10}, 310, 1, 1),
-    ],
-)
-def test_switch_load_on_off(
-    monkeypatch, testdata, time_delta, load_initial_state, load_state
-):
-    """
-    Test if the load can be swicthed on and off if the conditions are met.
-    """
-    monkeypatch.setattr(gpio, "DigitalOutputDevice", DigitalOutputDevice)
+    lm.process(data={"actual_total_injection": 2, "actual_total_consumption": 0})
+    assert lm.timer.is_started is False
+    assert lm.load.is_on
 
-    lm = LoadManager()
-    lm.timer._start_time = time() - time_delta
-    lm.load.on() if load_initial_state == 1 else lm.load.off()
-    lm.process(data=testdata)
+    lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.1})
+    assert lm.timer.is_started is False
+    assert lm.load.is_on
 
-    assert lm.load.status == load_state
+    lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.5})
+    assert lm.timer.is_started is True
+    assert lm.timer.timer_type == "consume"
+    sleep(1)
+    assert lm.timer.elapsed >= 1
+
+    lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.1})
+    assert lm.timer.is_started is True
+    assert lm.timer.timer_type == "consume"
+    assert lm.timer.elapsed < 1
+
+    lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.6})
+    sleep(3)
+
+    lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.55})
+    assert lm.timer.is_started is False
+    assert lm.load.is_off
+
+

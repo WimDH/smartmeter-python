@@ -1,6 +1,7 @@
 from logging import getLogger
 from typing import Union, Optional, Dict
 from time import time, sleep
+from xmlrpc.client import Boolean
 from PIL import Image, ImageDraw, ImageFont
 import asyncio
 
@@ -17,8 +18,8 @@ except ImportError:
     pass
 
 LOG = getLogger(".")
-THRESHOLD_NAMES = ["upper", "lower"]
-
+THRESHOLD_NAMES = ["consume", "inject"]
+LOAD_PIN = 24
 
 class Load:
     """
@@ -61,6 +62,16 @@ class Load:
         self._load.off()
 
     @property
+    def is_on(self) -> Boolean:
+        """ Return True if the load is switched on else False."""
+        return True if self._load.value == 1 else False
+    
+    @property
+    def is_off(self) -> Boolean:
+        """ Retunr True is the load is off, else True."""
+        return not self.is_on
+
+    @property
     def current_power(self) -> float:
         """
         Return how much power the load draws in Watt.
@@ -83,40 +94,46 @@ class Load:
 class Timer:
     """
     Represents a timer that count how long the actual power crossed it's threshold (in seconds).
-    Two thresholds are valid:
-        1. "upper": the upper threshold, which defines the maximum injected power.
-        2. "lower": the lower threshold, which defines the maximum consumed power.
+    Two types are valid:
+        1. "inject": defines the maximum injected power.
+        2. "consume": defines the maximum consumed power.
     """
 
     def __init__(self) -> None:
         self._start_time: Union[float, None] = None
-        self.threshold: Union[str, None] = None
+        self.timer_type: Union[str, None] = None
 
-    def start(self, threshold: str) -> None:
+    def start(self, timer_type: str) -> None:
         """
         Start the timer.
         """
-        if threshold not in THRESHOLD_NAMES:
+        if timer_type not in THRESHOLD_NAMES:
             raise ValueError(f"Threshold not in {THRESHOLD_NAMES}")
 
-        LOG.debug("Timer: starting timer for {threshold} threshold.")
+        LOG.debug(f"Timer: starting timer for {timer_type} threshold.")
         self._start_time = time()
-        self.threshold = threshold
+        self.timer_type = timer_type
 
     def stop(self) -> None:
         """
         Stop the timer.
         """
-        LOG.debug("Timer: stopping timer.")
+        LOG.debug(f"Timer: stopping timer on timer: {self.timer_type}.")
         self._start_time = None
+        self.timer_type = None
 
-    def reset(self) -> None:
-        """
-        Set the timer to the current time, overwriting the previous value.
-        It's actually the same as starting the timer.
-        """
-        LOG.debug("Timer: resetting timer.")
-        self._start_time = time()
+    def restart(self, timer_type: Optional[str] = None) -> None:
+        """Restart the timer, if the timer type is precified, set it as well, otherwise leave it as is."""
+        if timer_type:
+            LOG.debug(f"Setting threshold to {timer_type}")
+        else:
+            # We clear the timer time if we stop the timer.
+            t = self.timer_type
+
+        LOG.debug("Restarting timer.")
+        if self.is_started:
+            self.stop()
+        self.start(t or self.timer_type)
 
     @property
     def elapsed(self) -> int:
@@ -133,7 +150,7 @@ class Timer:
 
     @property
     def is_started(self):
-        """return True if the timer is started, else false."""
+        """return True if the timer is started, else False."""
         return self._start_time is not None
 
 
@@ -144,17 +161,24 @@ class LoadManager:
         self,
         max_consume: int,
         max_inject: int,
+        consume_time: int,
+        inject_time: int
     ) -> None:
         # Setup the load
         # pin GPIO24
         self.max_consume = max_consume
         self.max_inject = max_inject
-        self.load = Load(pin=24, name="car charger", max_power=230 * 10)
+        self.consume_time = consume_time
+        self.inject_time = inject_time
+        self.load = Load(
+            pin=LOAD_PIN, name="car charger", max_power=230 * 10
+        )  # TODO: move to configfile so we can have more loads. Also update PCB!
         self.timer = Timer()
 
     def process(self, data: Dict) -> None:
         """
         Process the data coming from the digital meter, and switch the load if needed.
+        actual_injected and actual_consumed values are in kW.
         """
         actual_injected = data.get("actual_total_injection", 0) * 1000
         actual_consumed = data.get("actual_total_consumption", 0) * 1000
@@ -162,29 +186,39 @@ class LoadManager:
             f"Load manager: Processing data: actual injected={actual_injected}W, actual consumed={actual_consumed}W."
         )
 
-        # # Start the timer if the actual power is crossing max power to inject.
-        # if not self.timer.is_started and actual_injected >= self.max_inject:
-        #     LOG.debug(
-        #         "Loadmanager: upper threshold crossed, started the stablity timer."
-        #     )
-        #     self.timer.start(threshold="upper")
+        if actual_injected >= self.max_inject and self.load.is_off and not self.timer.is_started:
+            LOG.debug("Load manager: maximum inject threshold crossed, starting timer.")
+            self.timer.start(timer_type="inject")
 
-        # # Start the timer if the actual power is crossing max power to consume.
-        # if not self.timer.is_started and actual_consumed >= self.max_consume:
-        #     LOG.debug(
-        #         "Loadmanager: lower threshold crossed, started the stablity timer."
-        #     )
-        #     self.timer.start(threshold="lower")
+        elif actual_consumed >= self.max_consume and self.load.is_on and not self.timer.is_started:
+            LOG.debug("Load manager: maximum consume threshold crossed, starting timer.")
+            self.timer.start(timer_type="consume")
 
-        # Switch on load.
-        if actual_injected > self.max_inject and self.load.status == 0:
-            LOG.info("Loadmanager: switching the load ON.")
+        elif (
+            (actual_injected < self.max_inject and self.load.is_off and self.timer.is_started)
+            or (actual_consumed < self.max_consume and self.load.is_on and self.timer.is_started)
+        ):
+            LOG.debug(f"Load manager: below the max set values, restarting timer for type {self.timer.timer_type}.")
+            self.timer.restart()
+
+        LOG.debug(f"Load manager: actual injected power: {actual_injected}W, actual consumed power: {actual_consumed}W, timer is started: {self.timer.is_started}, timer type: {self.timer.timer_type}, timer elapsed: {self.timer.elapsed}s")
+
+        # Switch on load only if we do not cross the maximum consume level.
+        if (
+            self.timer.timer_type == "inject"
+            and self.timer.elapsed >= self.inject_time
+            and abs(actual_injected - self.load.max_power) < self.max_consume
+        ):
+            LOG.info("Load manager: switching the load ON.")
             self.load.on()
             self.timer.stop()
 
         # Switch off load.
-        if actual_consumed >= self.max_consume and self.load.status == 1:
-            LOG.info("Loadmanager: switching the load OFF.")
+        if (
+            self.timer.timer_type == "consume"
+            and self.timer.elapsed >= self.consume_time
+        ):
+            LOG.info(f"Load manager: switching the load OFF after {self.load.state_time} seconds.")
             self.load.off()
             self.timer.stop()
 

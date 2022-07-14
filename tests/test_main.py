@@ -13,12 +13,6 @@ from smartmeter.main import parse_cli, load_config, setup_log
             None,
         ),
         (
-            ["-c", "tests/testdata/sample_config.ini", "-T"],
-            "tests/testdata/sample_config.ini",
-            True,
-            None,
-        ),
-        (
             ["-c", "tests/testdata/sample_config.ini", "-f", "/home/test/blah.txt"],
             "tests/testdata/sample_config.ini",
             False,
@@ -31,7 +25,6 @@ def test_parse_cli(cli_data, cfg_result, test_result, fake_result) -> None:
     options = parse_cli(cli_args=cli_data)
 
     assert options.configfile == cfg_result
-    assert options.run_test == test_result
     assert options.fake_serial == fake_result
 
 
