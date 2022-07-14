@@ -131,7 +131,7 @@ def worker(
             max_consume=load_cfg.getint("max_consume"),
             max_inject=load_cfg.getint("max_inject"),
             consume_time=load_cfg.getint("consume_time"),
-            inject_time=load_cfg.getint("inject_time")
+            inject_time=load_cfg.getint("inject_time"),
         )
 
     loop = asyncio.get_event_loop()

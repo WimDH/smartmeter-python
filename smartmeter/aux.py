@@ -21,6 +21,7 @@ LOG = getLogger(".")
 THRESHOLD_NAMES = ["consume", "inject"]
 LOAD_PIN = 24
 
+
 class Load:
     """
     Defines a load.
@@ -63,12 +64,12 @@ class Load:
 
     @property
     def is_on(self) -> Boolean:
-        """ Return True if the load is switched on else False."""
+        """Return True if the load is switched on else False."""
         return True if self._load.value == 1 else False
-    
+
     @property
     def is_off(self) -> Boolean:
-        """ Retunr True is the load is off, else True."""
+        """Retunr True is the load is off, else True."""
         return not self.is_on
 
     @property
@@ -158,11 +159,7 @@ class LoadManager:
     """Manages a connected load."""
 
     def __init__(
-        self,
-        max_consume: int,
-        max_inject: int,
-        consume_time: int,
-        inject_time: int
+        self, max_consume: int, max_inject: int, consume_time: int, inject_time: int
     ) -> None:
         # Setup the load
         # pin GPIO24
@@ -186,22 +183,42 @@ class LoadManager:
             f"Load manager: Processing data: actual injected={actual_injected}W, actual consumed={actual_consumed}W."
         )
 
-        if actual_injected >= self.max_inject and self.load.is_off and not self.timer.is_started:
+        if (
+            actual_injected >= self.max_inject
+            and self.load.is_off
+            and not self.timer.is_started
+        ):
             LOG.debug("Load manager: maximum inject threshold crossed, starting timer.")
             self.timer.start(timer_type="inject")
 
-        elif actual_consumed >= self.max_consume and self.load.is_on and not self.timer.is_started:
-            LOG.debug("Load manager: maximum consume threshold crossed, starting timer.")
+        elif (
+            actual_consumed >= self.max_consume
+            and self.load.is_on
+            and not self.timer.is_started
+        ):
+            LOG.debug(
+                "Load manager: maximum consume threshold crossed, starting timer."
+            )
             self.timer.start(timer_type="consume")
 
         elif (
-            (actual_injected < self.max_inject and self.load.is_off and self.timer.is_started)
-            or (actual_consumed < self.max_consume and self.load.is_on and self.timer.is_started)
+            actual_injected < self.max_inject
+            and self.load.is_off
+            and self.timer.is_started
+        ) or (
+            actual_consumed < self.max_consume
+            and self.load.is_on
+            and self.timer.is_started
         ):
-            LOG.debug(f"Load manager: below the max set values, restarting timer for type {self.timer.timer_type}.")
+            LOG.debug(
+                f"Load manager: below the max set values, restarting timer for type {self.timer.timer_type}."
+            )
             self.timer.restart()
+        elapsed_time = self.timer.elapsed if self.timer.is_started else "-"
 
-        LOG.debug(f"Load manager: actual injected power: {actual_injected}W, actual consumed power: {actual_consumed}W, timer is started: {self.timer.is_started}, timer type: {self.timer.timer_type}, timer elapsed: {self.timer.elapsed}s")
+        LOG.debug(
+            f"Load manager: actual injected power: {actual_injected}W, actual consumed power: {actual_consumed}W, timer is started: {self.timer.is_started}, timer type: {self.timer.timer_type}, timer elapsed: {elapsed_time}s"
+        )
 
         # Switch on load only if we do not cross the maximum consume level.
         if (
@@ -218,7 +235,9 @@ class LoadManager:
             self.timer.timer_type == "consume"
             and self.timer.elapsed >= self.consume_time
         ):
-            LOG.info(f"Load manager: switching the load OFF after {self.load.state_time} seconds.")
+            LOG.info(
+                f"Load manager: switching the load OFF after {self.load.state_time} seconds."
+            )
             self.load.off()
             self.timer.stop()
 

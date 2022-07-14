@@ -23,7 +23,7 @@ def test_timer_elapsec_when_not_started():
     assert t.elapsed == -1
 
 
-@pytest.mark.parametrize("result",  [True, False])
+@pytest.mark.parametrize("result", [True, False])
 def test_load_status(result):
     """
     Test if we can get the status of the load: 1 if the load is on, 0 if the load is off.
@@ -45,7 +45,7 @@ def test_loadmanager():
         max_consume=500,  # Watt
         max_inject=1500,  # Watt
         consume_time=3,  # seconds
-        inject_time=3    # seconds
+        inject_time=3,  # seconds
     )
 
     lm.process(data={"actual_total_injection": 2, "actual_total_consumption": 0})
@@ -87,5 +87,3 @@ def test_loadmanager():
     lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.55})
     assert lm.timer.is_started is False
     assert lm.load.is_off
-
-
