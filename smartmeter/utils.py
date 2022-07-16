@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Any, Dict, Union
 from datetime import datetime, timedelta
 from dateutil import parser as dateutil_parser
 import re
@@ -85,7 +85,7 @@ def convert_from_human_readable(value: Union[str, int]) -> int:
 class Borg:
     """A Borg Singleton."""
 
-    _shared_state = {}
+    _shared_state: Dict = {}
 
     def __init__(self) -> None:
         self.__dict__ = self._shared_state
@@ -94,6 +94,6 @@ class Borg:
 class Cache(Borg):
     """An object to cache the latest meter data and various states and measured values."""
 
-    def __init__(self, data) -> None:
+    def __init__(self, data: Any) -> None:
         Borg.__init__(self)
         self.data = data

@@ -9,7 +9,7 @@ from time import sleep
 sys.path.append(
     os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
 )
-from smartmeter.aux import LoadManager, Timer, Load, gpio
+from smartmeter.aux import LoadManager, Timer, Load
 
 Device.pin_factory = MockFactory()
 

@@ -18,7 +18,7 @@ except ImportError:
     pass
 
 LOG = getLogger(".")
-THRESHOLD_NAMES = ["consume", "inject"]
+TIMER_TYPES = ["consume", "inject"]
 LOAD_PIN = 24
 
 
@@ -102,12 +102,12 @@ class Timer:
         self._start_time: Union[float, None] = None
         self.timer_type: Union[str, None] = None
 
-    def start(self, timer_type: str) -> None:
+    def start(self, timer_type: Optional[str]) -> None:
         """
         Start the timer.
         """
-        if timer_type not in THRESHOLD_NAMES:
-            raise ValueError(f"Threshold not in {THRESHOLD_NAMES}")
+        if timer_type not in TIMER_TYPES:
+            raise ValueError(f"Timer type {timer_type} not in {TIMER_TYPES}")
 
         LOG.debug(f"Timer: starting timer for {timer_type} threshold.")
         self._start_time = time()
@@ -215,7 +215,7 @@ class LoadManager:
         elapsed_time = self.timer.elapsed if self.timer.is_started else "-"
 
         LOG.debug(
-            f"Load manager: actual injected power: {actual_injected}W, actual consumed power: {actual_consumed}W, timer is started: {self.timer.is_started}, timer type: {self.timer.timer_type}, timer elapsed: {elapsed_time}s"
+            f"Load manager: actual injected power: {actual_injected}W, actual consumed power: {actual_consumed}W, timer is started: {self.timer.is_started}, timer type: {self.timer.timer_type}, timer elapsed: {elapsed_time}s"  # noqa: E501
         )
 
         # Switch on load only if we do not cross the maximum consume level.

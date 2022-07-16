@@ -5,7 +5,7 @@ import os
 import argparse
 import configparser
 from time import time
-from typing import List, Dict, Optional
+from typing import List, Optional, Union
 import logging
 from logging.handlers import RotatingFileHandler
 from coloredlogs import ColoredFormatter
@@ -108,9 +108,9 @@ def setup_log(
 def worker(
     log: logging.Logger,
     q: mp.Queue,
-    log_cfg: Optional[Dict],
-    influx_db_cfg: Optional[Dict],
-    load_cfg: Optional[Dict],
+    log_cfg: configparser.SectionProxy,
+    influx_db_cfg: Optional[configparser.SectionProxy],
+    load_cfg: Optional[configparser.SectionProxy],
 ) -> None:
     """
     Main worker to run in a separate process.
@@ -125,8 +125,8 @@ def worker(
             token=influx_db_cfg.get("token"),
             org=influx_db_cfg.get("org"),
             bucket=influx_db_cfg.get("bucket"),
-            timeout=influx_db_cfg.get("timeout", 10000),
-            verify_ssl=influx_db_cfg.get("verify_ssl", True),
+            timeout=influx_db_cfg.getint("timeout", 10000),
+            verify_ssl=influx_db_cfg.getboolean("verify_ssl", True),
         )
 
     if load_cfg:
@@ -138,8 +138,7 @@ def worker(
         )
         asyncio.ensure_future(queue_worker(q, db, load))
 
-    if log_cfg:
-        asyncio.ensure_future(peripheralia_worker(log_cfg))
+    asyncio.ensure_future(peripheralia_worker(log_cfg))
 
     if not not_on_a_pi():
         # This only makes sense if we have the hardware connected.
@@ -148,13 +147,13 @@ def worker(
     loop.run_forever()
 
 
-async def peripheralia_worker(cfg: Dict) -> None:
+async def peripheralia_worker(cfg: configparser.SectionProxy) -> None:
     """Worker that does all the side jobs."""
     if (cfg.getboolean("keepalive", False) and int(time() % 300) == 0):
         LOG.info("Keepalive.")
 
 
-async def queue_worker(q: mp.Queue, db: DbInflux, load: LoadManager) -> None:
+async def queue_worker(q: mp.Queue, db: Union[DbInflux, None], load: Union[LoadManager, None]) -> None:
     """
     This worker reads from the queue, controls the load and sends the datapoints to an InfluxDB.
     # TODO: Update status LED.
@@ -229,7 +228,9 @@ def main() -> None:
 
     log.debug("Board info: {}".format(str(gpio.pi_info())))
 
-    log_cfg = config["logging"]
+    influx_cfg: Union[configparser.SectionProxy, None] = None
+    load_cfg: Union[configparser.SectionProxy, None] = None
+    log_cfg: configparser.SectionProxy = config["logging"]
 
     if "influx" in config.sections() and config.getboolean(
         section="influx", option="enabled"
@@ -237,7 +238,6 @@ def main() -> None:
         influx_cfg = config["influx"]
         log.debug("InfluxDB is configured at {}".format(influx_cfg["url"]))
     else:
-        influx_cfg = None
         log.info("InfluxDB is disabled or not configured!")
 
     if "load" in config.sections() and config.getboolean(
@@ -246,7 +246,6 @@ def main() -> None:
         load_cfg = config["load"]
         log.debug("Load management is enabled.")
     else:
-        load_cfg = None
         log.info("Load management is disabled or not configured!")
 
     io_msg_q: mp.Queue = mp.Queue()

@@ -16,8 +16,7 @@ from smartmeter.digimeter import (
     autoformat,
     check_msg,
     read_serial,
-    serial,
-    fake_serial,
+    serial
 )
 
 ROOT_DIR = os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))

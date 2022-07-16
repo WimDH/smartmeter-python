@@ -10,5 +10,5 @@ exclude =
     .venv,
     .vscode
 
-max-complexity = 10
+max-complexity = 12
 max-line-length = 130
