@@ -215,7 +215,7 @@ class LoadManager:
         elapsed_time = self.timer.elapsed if self.timer.is_started else "-"
 
         LOG.debug(
-            f"Load manager: actual injected power: {actual_injected}W, actual consumed power: {actual_consumed}W, timer is started: {self.timer.is_started}, timer type: {self.timer.timer_type}, timer elapsed: {elapsed_time}s"  # noqa: E501
+            f"Load manager: load is on: {self.load.is_on}, actual injected power: {actual_injected}W, actual consumed power: {actual_consumed}W, timer is started: {self.timer.is_started}, timer type: {self.timer.timer_type}, timer elapsed: {elapsed_time}s"  # noqa: E501
         )
 
         # Switch on load only if we do not cross the maximum consume level.
