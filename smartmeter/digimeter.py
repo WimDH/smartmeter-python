@@ -145,9 +145,11 @@ def read_serial(
 
             except (SerialException):
                 LOG.error("Error while reading serial port.")
+                start_of_telegram_detected = False
 
             except (UnicodeDecodeError) as e:
                 LOG.error(f"Could not decode line received from the serial port: {e}")
+                start_of_telegram_detected = False
 
             except (Exception):
                 LOG.exception("Uncaught exception while reading from the serial port!")
