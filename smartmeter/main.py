@@ -1,9 +1,11 @@
+from calendar import c
 import signal
 import asyncio
 import sys
 import os
 import argparse
 import configparser
+from time import time
 from typing import List, Dict, Optional
 import logging
 from logging.handlers import RotatingFileHandler
@@ -107,6 +109,7 @@ def setup_log(
 def worker(
     log: logging.Logger,
     q: mp.Queue,
+    log_cfg: Optional[Dict],
     influx_db_cfg: Optional[Dict],
     load_cfg: Optional[Dict],
 ) -> None:
@@ -115,6 +118,7 @@ def worker(
     """
     db = None
     load = None
+    loop = asyncio.get_event_loop()
 
     if influx_db_cfg:
         db = DbInflux(
@@ -133,9 +137,11 @@ def worker(
             consume_time=load_cfg.getint("consume_time"),
             inject_time=load_cfg.getint("inject_time"),
         )
+        asyncio.ensure_future(queue_worker(log, q, db, load))
 
-    loop = asyncio.get_event_loop()
-    asyncio.ensure_future(queue_worker(log, q, db, load))
+    if log_cfg:
+        asyncio.ensure_future(peripheralia_worker(log_cfg))
+
     if not not_on_a_pi():
         # This only makes sense if we have the hardware connected.
         asyncio.ensure_future(display_worker(log))
@@ -143,9 +149,13 @@ def worker(
     loop.run_forever()
 
 
-async def queue_worker(
-    log: logging.Logger, q: mp.Queue, db: DbInflux, load: LoadManager
-) -> None:
+async def peripheralia_worker(cfg: Dict) -> None:
+    """Worker that does all the side jobs."""
+    if ( cfg.getboolean("keepalive", False) and time % 300 == 0):
+        LOG.info("Keepalive.")
+
+
+async def queue_worker(q: mp.Queue, db: DbInflux, load: LoadManager) -> None:
     """
     This worker reads from the queue, controls the load and sends the datapoints to an InfluxDB.
     # TODO: Update status LED.
@@ -156,7 +166,7 @@ async def queue_worker(
             if not q.empty():
                 data = q.get()
 
-                log.debug("Got data from the queue: {}".format(data))
+                LOG.debug("Got data from the queue: {}".format(data))
 
                 if db:
                     # Writing data to InfluxDB
@@ -170,13 +180,13 @@ async def queue_worker(
                 await asyncio.sleep(0.1)
 
         except Exception:
-            log.exception("Uncaught exception in queue worker!")
+            LOG.exception("Uncaught exception in queue worker!")
             await asyncio.sleep(0.1)
 
 
-async def display_worker(log: logging.Logger) -> None:
+async def display_worker() -> None:
     """
-    Displaying data what the inof button is pressed.
+    Displaying data when the info button is pressed.
     """
     buttons = Buttons()
     display = Display()
@@ -186,12 +196,12 @@ async def display_worker(log: logging.Logger) -> None:
         try:
             if buttons.info_button.is_pressed and not info_activated:
                 info_activated = True
-                log.debug("Info button is pressed.")
+                LOG.debug("Info button is pressed.")
                 await display.cycle()
                 info_activated = False
 
         except Exception:
-            log.exception("Uncaught exception in display worker!")
+            LOG.exception("Uncaught exception in display worker!")
             info_activated = False
 
         await asyncio.sleep(0.1)
@@ -211,14 +221,16 @@ def main() -> None:
         size=config.get(section="logging", option="size"),
         loglevel=config.get(section="logging", option="loglevel"),
     )
-    log.info("---start---")
+    log.info("---Start---")
 
     if not_on_a_pi():
-        log.critical(
+        log.warning(
             "It seems we are not running on a Raspberry PI! Some data is mocked!"
         )
 
     log.debug("Board info: {}".format(str(gpio.pi_info())))
+
+    log_cfg = config["logging"]
 
     if "influx" in config.sections() and config.getboolean(
         section="influx", option="enabled"
@@ -272,7 +284,7 @@ def main() -> None:
 
     log.info("Starting worker.")
     dispatcher_process = mp.Process(
-        target=worker, args=(log, io_msg_q, influx_cfg, load_cfg)
+        target=worker, args=(log, io_msg_q, log_cfg, influx_cfg, load_cfg)
     )
     dispatcher_process.start()
     dispatcher_process.join()

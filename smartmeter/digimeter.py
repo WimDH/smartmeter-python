@@ -42,7 +42,7 @@ FIELDS = [
 
 def parse(raw_msg):
     """Parse the raw message."""
-    LOG.debug("Parsing a raw telegram.")
+    LOG.debug("Parsing raw telegram.")
 
     msg = {"local_timestamp": datetime.now().isoformat()}
 
@@ -64,7 +64,7 @@ def check_msg(raw_msg: bytearray) -> bool:
     calculated_crc: str = ""
 
     # Find the end of message character '!'
-    LOG.debug("Checking CRC of message. Message length is {}.".format(len(raw_msg)))
+    LOG.debug("Checking message CRC. Message length is {}.".format(len(raw_msg)))
     pos = raw_msg.find(b"!")
     data = raw_msg[: pos + 1]
 
@@ -72,14 +72,14 @@ def check_msg(raw_msg: bytearray) -> bool:
         provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
         calculated_crc = hex(Crc16Lha.calc(data))
     except ValueError:
-        LOG.warning("Unable to calculate CRC!")
+        LOG.warning(f"Unable to calculate CRC! Provided value: {provided_crc}")
         return False
 
     crc_match = calculated_crc == provided_crc
     if crc_match:
         LOG.debug("Telegram has a valid CRC.")
     else:
-        LOG.warning("Telegram has an invalid CRC!")
+        LOG.warning(f"Telegram has an invalid CRC! Provided: {provided_crc} - Calculated: {calculated_crc}")
 
     return crc_match
 
