@@ -52,13 +52,11 @@ class Load:
 
     def on(self) -> None:
         """Switches the load on (set the pin high."""
-        LOG.info(f"Turning {self.name} on GPIO pin {self.gpio_pin} ON.")
         self.state_start_time = time()
         self._load.on()
 
     def off(self) -> None:
         """Switches the load on (set the pin high."""
-        LOG.info(f"Turning {self.name} on GPIO pin {self.gpio_pin} OFF.")
         self.state_start_time = time()
         self._load.off()
 
@@ -319,6 +317,8 @@ class CurrentSensors:
     """
     Manages the 2 current sensors. One sensor measure the load current of the car,
     the other one measures the power coming from the solar panels.
+
+    TODO: Add callibration functionality
     """
 
     def __init__(self) -> None:
@@ -362,18 +362,18 @@ class StatusLed:
         # GPIO22
         self.led = gpio.LED(pin=22)
 
-    def on(self):
+    def on(self) -> None:
         self.led.on()
 
-    def off(self):
+    def off(self) -> None:
         self.led.off()
 
-    def test(self):
+    def test(self) -> None:
         """Switch the LED on for 1 second."""
         self.led.on()
         sleep(1)
         self.led.off()
 
     @property
-    def status(self):
+    def status(self) -> Boolean:
         return self.led.is_active()

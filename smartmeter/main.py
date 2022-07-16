@@ -27,7 +27,7 @@ LOG = logging.getLogger(".")
 def stopall_handler(signum, frame):
     """Stops all processes and swicthes off the load and clears the display."""
     LOG.warning("Signal handler called with signal {}".format(signum))
-    LOG.info("---shutdown---")
+    LOG.info(f"---Shutdown {__name__}---")
     sys.exit(0)
 
 
