@@ -1,4 +1,3 @@
-from calendar import c
 import signal
 import asyncio
 import sys
@@ -29,7 +28,7 @@ LOG = logging.getLogger(".")
 def stopall_handler(signum, frame):
     """Stops all processes and swicthes off the load and clears the display."""
     LOG.warning("Signal handler called with signal {}".format(signum))
-    LOG.info(f"---Shutdown {__name__}---")
+    LOG.info(f"---Shutdown---")
     sys.exit(0)
 
 
@@ -137,7 +136,7 @@ def worker(
             consume_time=load_cfg.getint("consume_time"),
             inject_time=load_cfg.getint("inject_time"),
         )
-        asyncio.ensure_future(queue_worker(log, q, db, load))
+        asyncio.ensure_future(queue_worker(q, db, load))
 
     if log_cfg:
         asyncio.ensure_future(peripheralia_worker(log_cfg))
