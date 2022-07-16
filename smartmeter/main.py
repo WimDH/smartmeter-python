@@ -28,7 +28,7 @@ LOG = logging.getLogger(".")
 def stopall_handler(signum, frame):
     """Stops all processes and swicthes off the load and clears the display."""
     LOG.warning("Signal handler called with signal {}".format(signum))
-    LOG.info(f"---Shutdown---")
+    LOG.info("---Shutdown---")
     sys.exit(0)
 
 
@@ -143,7 +143,7 @@ def worker(
 
     if not not_on_a_pi():
         # This only makes sense if we have the hardware connected.
-        asyncio.ensure_future(display_worker(log))
+        asyncio.ensure_future(display_worker())
 
     loop.run_forever()
 
