@@ -151,7 +151,7 @@ def worker(
 
 async def peripheralia_worker(cfg: Dict) -> None:
     """Worker that does all the side jobs."""
-    if ( cfg.getboolean("keepalive", False) and time % 300 == 0):
+    if (cfg.getboolean("keepalive", False) and int(time() % 300) == 0):
         LOG.info("Keepalive.")
 
 
