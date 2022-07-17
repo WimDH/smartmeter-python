@@ -177,9 +177,6 @@ class LoadManager:
         """
         actual_injected = data.get("actual_total_injection", 0) * 1000
         actual_consumed = data.get("actual_total_consumption", 0) * 1000
-        LOG.debug(
-            f"Load manager: Processing data: actual injected={actual_injected}W, actual consumed={actual_consumed}W."
-        )
 
         if (
             actual_injected >= self.max_inject

@@ -136,12 +136,15 @@ def worker(
             consume_time=load_cfg.getint("consume_time"),
             inject_time=load_cfg.getint("inject_time"),
         )
+        LOG.debug("Start queue_worker routine")
         asyncio.ensure_future(queue_worker(q, db, load))
 
+    LOG.debug("Start peripheralia_worker routine")
     asyncio.ensure_future(peripheralia_worker(log_cfg))
 
     if not not_on_a_pi():
         # This only makes sense if we have the hardware connected.
+        LOG.debug("Start display_worker routine")
         asyncio.ensure_future(display_worker())
 
     loop.run_forever()
