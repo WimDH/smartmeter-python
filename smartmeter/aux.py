@@ -1,6 +1,6 @@
-from logging import getLogger
+import logging
 from typing import Union, Optional, Dict
-from time import time, sleep
+from time import time
 from xmlrpc.client import Boolean
 from PIL import Image, ImageDraw, ImageFont
 import asyncio
@@ -17,7 +17,7 @@ try:
 except ImportError:
     pass
 
-LOG = getLogger(".")
+LOG = logging.getLogger()
 TIMER_TYPES = ["consume", "inject"]
 LOAD_PIN = 24
 
@@ -209,10 +209,11 @@ class LoadManager:
                 f"Load manager: below the max set values, restarting timer for type {self.timer.timer_type}."
             )
             self.timer.restart()
-        elapsed_time = self.timer.elapsed if self.timer.is_started else "-"
 
+        elapsed_time = self.timer.elapsed if self.timer.is_started else "-"
+        load_state: str = "ON" if self.load.is_on else "OFF"
         LOG.debug(
-            f"Load manager: load is on: {self.load.is_on}, actual injected power: {actual_injected}W, actual consumed power: {actual_consumed}W, timer is started: {self.timer.is_started}, timer type: {self.timer.timer_type}, timer elapsed: {elapsed_time}s"  # noqa: E501
+            f"Load manager: load is: {load_state}, actual injected power: {actual_injected}W, actual consumed power: {actual_consumed}W, timer is started: {self.timer.is_started}, timer type: {self.timer.timer_type}, timer elapsed: {elapsed_time}s"  # noqa: E501
         )
 
         # Switch on load only if we do not cross the maximum consume level.
@@ -365,11 +366,15 @@ class StatusLed:
     def off(self) -> None:
         self.led.off()
 
-    def test(self) -> None:
-        """Switch the LED on for 1 second."""
-        self.led.on()
-        sleep(1)
-        self.led.off()
+    def blink(self, interval: Optional[int] = 1) -> None:
+        """Make the status led blink."""
+        self.led.blink(on_time=interval, off_time=interval)
+
+    # def test(self) -> None:
+    #     """Switch the LED on for 1 second."""
+    #     self.led.on()
+    #     sleep(1)
+    #     self.led.off()
 
     @property
     def status(self) -> Boolean:

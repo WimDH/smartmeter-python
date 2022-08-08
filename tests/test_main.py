@@ -1,6 +1,5 @@
 import pytest
-import logging
-from smartmeter.main import parse_cli, load_config, setup_log
+from smartmeter.main import parse_cli, load_config
 
 
 @pytest.mark.parametrize(
@@ -60,9 +59,9 @@ def test_load_config() -> None:
     ]
 
 
-def test_setup_logging():
-    """Test if we can setup the logging."""
-    logger = setup_log(filename="testlog.log", size="1M", keep=2, log_to_stdout=True)
+# def test_setup_logging():
+#     """Test if we can setup the logging."""
+#     logger = setup_log(filename="testlog.log", size="1M", keep=2, log_to_stdout=True)
 
-    assert isinstance(logger.handlers[0], logging.handlers.RotatingFileHandler)
-    assert isinstance(logger.handlers[1], logging.StreamHandler)
+#     assert isinstance(logger.handlers[0], logging.handlers.RotatingFileHandler)
+#     assert isinstance(logger.handlers[1], logging.StreamHandler)

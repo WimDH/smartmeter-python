@@ -1,16 +1,19 @@
+import logging
 from crccheck.crc import Crc16Lha
 import serial
 import re
-from logging import getLogger
 from typing import Optional
 from serial.serialutil import SerialException
 from queue import Queue
 from datetime import datetime
 from time import sleep
-from smartmeter.utils import convert_timestamp, calculate_timestamp_drift, autoformat
+from smartmeter.utils import (
+    convert_timestamp,
+    calculate_timestamp_drift,
+    autoformat
+)
 
-
-LOG = getLogger(".")
+LOG = logging.getLogger()
 START_OF_TELEGRAM = re.compile(r"^\/FLU\d{1}\\")
 END_OF_TELEGRAM = re.compile(r"^![A-Z0-9]{4}")
 FIELDS = [
@@ -42,6 +45,7 @@ FIELDS = [
 
 def parse(raw_msg):
     """Parse the raw message."""
+
     LOG.debug("Parsing raw telegram.")
 
     msg = {"local_timestamp": datetime.now().isoformat()}
@@ -130,8 +134,8 @@ def read_serial(
                     telegram_count += 1
                     start_of_telegram_detected = False
                     LOG.debug(
-                        "Recorded a new telegram:{}".format(telegram.decode("ascii"))
-                    )
+                         "Recorded a new telegram:{}".format(telegram.decode("ascii"))
+                     )
 
                     if check_msg(telegram):
                         # If the CRC is correct, add it to the queue.
@@ -153,17 +157,25 @@ def read_serial(
 
             except (Exception):
                 LOG.exception("Uncaught exception while reading from the serial port!")
+                pass
 
             if _quit_after and _quit_after == telegram_count:
                 break
 
 
 def fake_serial(
-    msg_q: Queue, filename: str, run_forever: bool = False, wait: bool = True
+    loglevel: str,
+    log_q: Queue,
+    msg_q: Queue,
+    filename: str,
+    wait: bool = True,
 ) -> None:
     """Read data from a file. If run_forever is True, restart when EOF is reached."""
 
+    # child_logger(loglevel, log_q)
+    log = logging.getLogger()
     LOG.debug("Running fake serial.")
+
     telegram = ""
     with open(filename) as fh:
         while True:

@@ -1,9 +1,10 @@
+import logging
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
-from logging import getLogger
 from typing import Dict, List, Tuple
 from smartmeter.utils import convert_timestamp
 
-LOG = getLogger(".")
+
+LOG = logging.getLogger()
 
 
 class DbInflux:

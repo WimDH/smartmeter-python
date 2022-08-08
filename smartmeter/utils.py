@@ -1,11 +1,63 @@
 from typing import Any, Dict, Union
-from datetime import datetime, timedelta
+import multiprocessing as mp
+from datetime import datetime
 from dateutil import parser as dateutil_parser
 import re
-from logging import getLogger
+import logging
+from logging.handlers import RotatingFileHandler, QueueHandler
+from coloredlogs import ColoredFormatter
 
-LOG = getLogger(".")
 
+def main_logger(
+    log_queue: mp.Queue,
+    filename: str,
+    log_to_stdout: bool = False,
+    keep: int = 2,
+    size: str = "1M",
+    loglevel: str = "info",
+) -> logging.Logger:
+    """
+    Setup the logging targets.
+    """
+    logger = logging.getLogger()
+    logger.setLevel(getattr(logging, loglevel.upper()))
+
+    # Log to a file.
+    file_handler = RotatingFileHandler(
+        filename=filename, maxBytes=convert_from_human_readable(size), backupCount=keep
+    )
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s - %(message)s")
+    )
+    logger.addHandler(file_handler)
+
+    # Log to stdout.
+    if log_to_stdout:
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(
+            ColoredFormatter("%(asctime)s %(levelname)s - %(message)s")
+        )
+        logger.addHandler(console_handler)
+
+    while True:
+        log_record = log_queue.get()
+        logger = logging.getLogger()
+        logger.handle(log_record)
+
+
+def child_logger(loglevel, queue):
+    """
+    Create a logger for the child processes.
+    """
+    logger = logging.getLogger()
+    logger.setLevel(getattr(logging, loglevel.upper()))
+    logger.addHandler(QueueHandler(queue))
+
+    return logger
+
+
+def get_queue_logger():
+    return logging.getLogger("queue_logger")
 
 def autoformat(value: Union[str, int, float]) -> Union[str, int, float]:
     """Convert to str, int or float, based on the content."""
@@ -39,7 +91,7 @@ def convert_timestamp(timestamp: str) -> str:
 
     iso8601_timestamp = f"{year}-{month}-{day}T{hour}:{minute}:{second}+{tz}"
 
-    LOG.debug("Converted timestamp from {} to {}".format(timestamp, iso8601_timestamp))
+    # LOG.debug("Converted timestamp from {} to {}".format(timestamp, iso8601_timestamp))
 
     return iso8601_timestamp
 
@@ -52,14 +104,14 @@ def calculate_timestamp_drift(ts_type: str, iso_8601_timestamp: str) -> int:
     local_timestamp = datetime.now().astimezone()
     telegram_timestamp = dateutil_parser.parse(iso_8601_timestamp)
     delta_seconds = int((local_timestamp - telegram_timestamp).total_seconds())
-    delta_human_readable = "{:0>8}".format(str(timedelta(seconds=delta_seconds)))
-
-    log_msg = f"Timestamp for {ts_type} drift is: {delta_human_readable}."
-
-    if delta_seconds < 60:
-        LOG.debug(log_msg)
-    else:
-        LOG.warning(log_msg)
+    # delta_human_readable = "{:0>8}".format(str(timedelta(seconds=delta_seconds)))
+    #
+    # log_msg = f"Timestamp for {ts_type} drift is: {delta_human_readable}."
+    #
+    # if delta_seconds < 60:
+    #     LOG.debug(log_msg)
+    # else:
+    #     LOG.warning(log_msg)
 
     return delta_seconds
 
@@ -91,7 +143,7 @@ class Borg:
         self.__dict__ = self._shared_state
 
 
-class Cache(Borg):
+class Status(Borg):
     """An object to cache the latest meter data and various states and measured values."""
 
     def __init__(self, data: Any) -> None:
