@@ -59,6 +59,7 @@ def child_logger(loglevel, queue):
 def get_queue_logger():
     return logging.getLogger("queue_logger")
 
+
 def autoformat(value: Union[str, int, float]) -> Union[str, int, float]:
     """Convert to str, int or float, based on the content."""
     if type(value) == str and re.match(r"^\d+$", value):

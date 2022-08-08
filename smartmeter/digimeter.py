@@ -7,11 +7,7 @@ from serial.serialutil import SerialException
 from queue import Queue
 from datetime import datetime
 from time import sleep
-from smartmeter.utils import (
-    convert_timestamp,
-    calculate_timestamp_drift,
-    autoformat
-)
+from smartmeter.utils import convert_timestamp, calculate_timestamp_drift, autoformat
 
 LOG = logging.getLogger()
 START_OF_TELEGRAM = re.compile(r"^\/FLU\d{1}\\")
@@ -83,7 +79,9 @@ def check_msg(raw_msg: bytearray) -> bool:
     if crc_match:
         LOG.debug("Telegram has a valid CRC.")
     else:
-        LOG.warning(f"Telegram has an invalid CRC! Provided: {provided_crc} - Calculated: {calculated_crc}")
+        LOG.warning(
+            f"Telegram has an invalid CRC! Provided: {provided_crc} - Calculated: {calculated_crc}"
+        )
 
     return crc_match
 
@@ -134,8 +132,8 @@ def read_serial(
                     telegram_count += 1
                     start_of_telegram_detected = False
                     LOG.debug(
-                         "Recorded a new telegram:{}".format(telegram.decode("ascii"))
-                     )
+                        "Recorded a new telegram:{}".format(telegram.decode("ascii"))
+                    )
 
                     if check_msg(telegram):
                         # If the CRC is correct, add it to the queue.
@@ -164,16 +162,12 @@ def read_serial(
 
 
 def fake_serial(
-    loglevel: str,
-    log_q: Queue,
     msg_q: Queue,
     filename: str,
     wait: bool = True,
 ) -> None:
     """Read data from a file. If run_forever is True, restart when EOF is reached."""
 
-    # child_logger(loglevel, log_q)
-    log = logging.getLogger()
     LOG.debug("Running fake serial.")
 
     telegram = ""

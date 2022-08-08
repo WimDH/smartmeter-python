@@ -187,8 +187,8 @@ def main() -> None:
             config.getboolean(section="logging", option="log_to_stdout"),
             config.getint(section="logging", option="keep"),
             config.get(section="logging", option="size"),
-            log_level
-        )
+            log_level,
+        ),
     )
     log_process.start()
 
@@ -245,8 +245,6 @@ def main() -> None:
         fake_serial_process = mp.Process(
             target=fake_serial,
             args=(
-                log_level,
-                log_queue,
                 io_msg_q,
                 args.fake_serial,
                 True,
@@ -260,7 +258,7 @@ def main() -> None:
     )
     dispatcher_process.start()
     dispatcher_process.join()
-    logging_thread.join()
+    log_process.join()
 
 
 if __name__ == "__main__":
