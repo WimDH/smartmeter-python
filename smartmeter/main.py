@@ -147,7 +147,7 @@ async def queue_worker(
             if int(time.monotonic()) % 60 == 0 and (int(time.monotonic()) - msg_last_time) > 5 :
                 log.info("The worker processed {} messages from the queue in the last minute.".format(msg_count - msg_pointer))
                 msg_pointer = msg_count
-                telegram_last_time = int(time.monotonic())
+                msg_last_time = int(time.monotonic())
 
         except Exception:
             log.exception("Uncaught exception in queue worker!")
