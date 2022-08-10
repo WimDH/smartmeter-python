@@ -143,7 +143,7 @@ async def queue_worker(
             else:
                 await asyncio.sleep(0.1)
 
-            if int(time.monotonic) % 60 == 0:
+            if int(time.monotonic()) % 60 == 0:
                 log.info("The worker processed {} messages from the queue in the last minute.".format(msg_count - msg_pointer))
                 msg_pointer = msg_count
 
