@@ -168,6 +168,7 @@ def read_serial(
                     "Received {} telegrams from the digital meter in the last minute.".format(telegram_count - telegram_pointer)  # noqa E501
                 )
                 telegram_pointer = telegram_count
+                telegram_last_time = int(time.monotonic())
 
             if _quit_after and _quit_after == telegram_count:
                 break
