@@ -163,7 +163,7 @@ def read_serial(
                 LOG.exception("Uncaught exception while reading from the serial port!")
                 pass
 
-            if int(time.monotonic()) % 60 == 0 and int(time.monotonic()) - telegram_last_time > 0:
+            if int(time.monotonic()) % 60 == 0 and int(time.monotonic()) - telegram_last_time > 5:
                 LOG.info(
                     "Received {} telegrams from the digital meter in the last minute.".format(telegram_count - telegram_pointer)  # noqa E501
                 )
