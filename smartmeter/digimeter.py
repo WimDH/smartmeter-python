@@ -6,7 +6,7 @@ from typing import Optional
 from serial.serialutil import SerialException
 from queue import Queue
 from datetime import datetime
-from time import sleep
+from time import sleep, monotonic
 from smartmeter.utils import convert_timestamp, calculate_timestamp_drift, autoformat
 
 LOG = logging.getLogger()
@@ -105,6 +105,7 @@ def read_serial(
     _quit_after is only used during testing to break the infinite loop while reading from the serial port.
     """
     telegram_count: int = 0
+    telegram_pointer: int = 0
     line: bytes
     start_of_telegram_detected: bool = False
     telegram: bytearray = bytearray()
@@ -159,6 +160,12 @@ def read_serial(
             except (Exception):
                 LOG.exception("Uncaught exception while reading from the serial port!")
                 pass
+
+            if monotonic() % 300 == 0:
+                LOG.info(
+                    "Received {} telegrams from the digital meter in the last 5 minutes.".format(telegram_count - telegram_pointer)  # noqa E501
+                )
+                telegram_pointer = telegram_count
 
             if _quit_after and _quit_after == telegram_count:
                 break
