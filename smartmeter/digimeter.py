@@ -75,8 +75,8 @@ def check_msg(raw_msg: bytearray) -> bool:
     except ValueError:
         LOG.warning("Unable to calculate CRC! Provided value: {}".format(provided_crc))
         return False
-    except Exception:
-        LOG.exception()
+    except Exception as e:
+        LOG.exception(e)
         return False
 
     crc_match = calculated_crc == provided_crc

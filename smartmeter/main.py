@@ -152,7 +152,7 @@ async def queue_worker(
             await asyncio.sleep(0.1)
 
 
-async def display_worker(loglevel: str, log_q: mp.Queue) -> None:
+async def display_worker() -> None:
     """
     Displaying data when the info button is pressed.
     """
