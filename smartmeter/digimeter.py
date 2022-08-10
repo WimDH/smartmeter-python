@@ -72,7 +72,10 @@ def check_msg(raw_msg: bytearray) -> bool:
         provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
         calculated_crc = hex(Crc16Lha.calc(data))
     except ValueError:
-        LOG.warning(f"Unable to calculate CRC! Provided value: {provided_crc}")
+        LOG.warning("Unable to calculate CRC! Provided value: {}".format(provided_crc))
+        return False
+    except Exception:
+        LOG.exception()
         return False
 
     crc_match = calculated_crc == provided_crc
@@ -80,7 +83,7 @@ def check_msg(raw_msg: bytearray) -> bool:
         LOG.debug("Telegram has a valid CRC.")
     else:
         LOG.warning(
-            f"Telegram has an invalid CRC! Provided: {provided_crc} - Calculated: {calculated_crc}"
+            "Telegram has an invalid CRC! Provided: {} - Calculated: {}".format(provided_crc, calculated_crc)
         )
 
     return crc_match
