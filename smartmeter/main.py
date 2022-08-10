@@ -11,6 +11,7 @@ from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, Buttons
 from smartmeter.utils import child_logger, main_logger
+from time import monotonic
 
 try:
     import gpiozero as gpio
@@ -120,11 +121,14 @@ async def queue_worker(
     # TODO: Update status LED.
     """
     log = logging.getLogger()
+    msg_count = 0
+    msg_pointer = 0
 
     while True:
         try:
             if not msg_queue.empty():
                 data = msg_queue.get()
+                msg_count += 1
 
                 log.debug("Got data from the queue: {}".format(data))
 
@@ -139,9 +143,14 @@ async def queue_worker(
             else:
                 await asyncio.sleep(0.1)
 
+            if monotonic % 60 == 0:
+                log.info("The worker processed {} messages from the queue in the last minute.".format(msg_count - msg_pointer))
+                msg_pointer = msg_count
+
         except Exception:
-            # LOG.exception("Uncaught exception in queue worker!")
+            log.exception("Uncaught exception in queue worker!")
             await asyncio.sleep(0.1)
+
 
 
 async def display_worker(loglevel: str, log_q: mp.Queue) -> None:

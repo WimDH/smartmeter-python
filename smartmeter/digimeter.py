@@ -161,9 +161,9 @@ def read_serial(
                 LOG.exception("Uncaught exception while reading from the serial port!")
                 pass
 
-            if monotonic() % 300 == 0:
+            if monotonic() % 60 == 0:
                 LOG.info(
-                    "Received {} telegrams from the digital meter in the last 5 minutes.".format(telegram_count - telegram_pointer)  # noqa E501
+                    "Received {} telegrams from the digital meter in the last minute.".format(telegram_count - telegram_pointer)  # noqa E501
                 )
                 telegram_pointer = telegram_count
 
