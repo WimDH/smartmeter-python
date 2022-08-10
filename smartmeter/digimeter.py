@@ -6,7 +6,8 @@ from typing import Optional
 from serial.serialutil import SerialException
 from queue import Queue
 from datetime import datetime
-from time import sleep, monotonic
+from time import sleep
+import time
 from smartmeter.utils import convert_timestamp, calculate_timestamp_drift, autoformat
 
 LOG = logging.getLogger()
@@ -161,7 +162,7 @@ def read_serial(
                 LOG.exception("Uncaught exception while reading from the serial port!")
                 pass
 
-            if monotonic() % 60 == 0:
+            if int(time.monotonic()) % 60 == 0:
                 LOG.info(
                     "Received {} telegrams from the digital meter in the last minute.".format(telegram_count - telegram_pointer)  # noqa E501
                 )

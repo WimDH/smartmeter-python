@@ -11,7 +11,7 @@ from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, Buttons
 from smartmeter.utils import child_logger, main_logger
-from time import monotonic
+import time
 
 try:
     import gpiozero as gpio
@@ -143,7 +143,7 @@ async def queue_worker(
             else:
                 await asyncio.sleep(0.1)
 
-            if monotonic % 60 == 0:
+            if int(time.monotonic) % 60 == 0:
                 log.info("The worker processed {} messages from the queue in the last minute.".format(msg_count - msg_pointer))
                 msg_pointer = msg_count
 
