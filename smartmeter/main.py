@@ -85,12 +85,11 @@ def main_worker(
 
     if influx_db_cfg:
         db = DbInflux(
-            url=influx_db_cfg.get("url"),
+            host=influx_db_cfg.get("host"),
             username=influx_db_cfg.get("username"),
             password=influx_db_cfg.get("password"),
             database=influx_db_cfg.get("database"),
             timeout=influx_db_cfg.getint("timeout", 10000),
-            verify_ssl=influx_db_cfg.getboolean("verify_ssl", True),
         )
 
     if load_cfg:

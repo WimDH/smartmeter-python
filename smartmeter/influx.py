@@ -15,7 +15,7 @@ class DbInflux:
 
     def __init__(
         self,
-        url: str,
+        host: str,
         username: str,
         password: str,
         database: str,
@@ -24,7 +24,7 @@ class DbInflux:
         ssl_ca_cert: str = None,
     ) -> None:
 
-        self.url = url
+        self.host = host
         self.username = username
         self.password = password
         self.database = database
@@ -44,7 +44,7 @@ class DbInflux:
             record_list.append(record)
 
         db = InfluxDBClient(
-            url=self.url,
+            host=self.host,
             username=self.username,
             password=self.password,
             database=self.database,
