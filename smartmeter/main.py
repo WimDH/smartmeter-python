@@ -86,9 +86,9 @@ def main_worker(
     if influx_db_cfg:
         db = DbInflux(
             url=influx_db_cfg.get("url"),
-            token=influx_db_cfg.get("token"),
-            org=influx_db_cfg.get("org"),
-            bucket=influx_db_cfg.get("bucket"),
+            username=influx_db_cfg.get("username"),
+            password=influx_db_cfg.get("password"),
+            database=influx_db_cfg.get("database"),
             timeout=influx_db_cfg.getint("timeout", 10000),
             verify_ssl=influx_db_cfg.getboolean("verify_ssl", True),
         )
@@ -145,7 +145,7 @@ async def queue_worker(
                 await asyncio.sleep(0.1)
 
             if int(time.monotonic()) % 60 == 0 and (int(time.monotonic()) - msg_last_time) > 5 :
-                log.info("The worker processed {} messages from the queue in the last minute.".format(msg_count - msg_pointer))
+                log.info("The worker processed {} messages from the queue in the last minute. (delta {})".format(msg_count - msg_pointer))
                 msg_pointer = msg_count
                 msg_last_time = int(time.monotonic())
 

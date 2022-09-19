@@ -1,11 +1,10 @@
 import logging
-from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
+from influxdb import InfluxDBClient
 from typing import Dict, List, Tuple
 from smartmeter.utils import convert_timestamp
 
 
 LOG = logging.getLogger()
-
 
 class DbInflux:
     """
@@ -17,48 +16,43 @@ class DbInflux:
     def __init__(
         self,
         url: str,
-        token: str,
-        org: str,
-        bucket: str,
+        username: str,
+        password: str,
+        database: str,
         verify_ssl: bool = True,
         timeout: int = 30 * 1000,  # milliseconds
         ssl_ca_cert: str = None,
     ) -> None:
 
         self.url = url
-        self.token = token
-        self.org = org
-        self.bucket = bucket
+        self.username = username,
+        self.password = password,
+        self.database = database,
         self.verify_ssl = verify_ssl
         self.timeout = timeout
         self.ssl_ca_cert = ssl_ca_cert
 
-    async def write(self, data: Dict) -> None:
+    def write(self, data: Dict) -> None:
         """
-        Write a telegram to an influx bucket.
+        Write a telegram to InfluxDB.
         # TODO: add counters for datapoints that are successfully written!
         # TODO: return how manu records were successfully written.
+        # TODO: logging.
         """
         record_list: List = []
         for record in self.craft_json(data):
             record_list.append(record)
 
-        async with InfluxDBClientAsync(
+        db = InfluxDBClient(
             url=self.url,
-            token=self.token,
-            org=self.org,
+            username=self.username,
+            password=self.password,
+            database=self.database,
             timeout=self.timeout,
             verify_ssl=self.verify_ssl,
-            ssl_ca_cert=self.ssl_ca_cert,
-        ) as db:
-            write_api = db.write_api()
-            while len(record_list) > 0:
-                data = record_list.pop(0)
-                success = await write_api.write(bucket=self.bucket, record=data)
-                if not success:
-                    LOG.warn(f"Unable to write datapoint: {data}")
-                else:
-                    LOG.debug(f"Datapoint successfully written: {data}")
+            ssl_ca_cert=self.ssl_ca_cert
+        )
+        db.write_points(points=record_list)
 
     @staticmethod
     def craft_json(data: Dict) -> Tuple[Dict, Dict]:
