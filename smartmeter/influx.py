@@ -24,12 +24,12 @@ class DbInflux:
         ssl_ca_cert: str = None,
     ) -> None:
 
-        self.url = url,
-        self.username = username,
-        self.password = password,
-        self.database = database,
-        self.verify_ssl = verify_ssl,
-        self.timeout = timeout,
+        self.url = url
+        self.username = username
+        self.password = password
+        self.database = database
+        self.verify_ssl = verify_ssl
+        self.timeout = timeout
         self.ssl_ca_cert = ssl_ca_cert
 
     def write(self, data: Dict) -> None:
