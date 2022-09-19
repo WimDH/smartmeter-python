@@ -218,7 +218,7 @@ def main() -> None:
         section="influx", option="enabled"
     ):
         influx_cfg = config["influx"]
-        log.debug("InfluxDB is configured at {}".format(influx_cfg["url"]))
+        log.debug("InfluxDB is configured at {}".format(influx_cfg["host"]))
     else:
         log.info("InfluxDB is disabled or not configured!")
 
