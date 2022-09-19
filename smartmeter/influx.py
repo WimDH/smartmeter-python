@@ -24,7 +24,7 @@ class DbInflux:
         ssl_ca_cert: str = None,
     ) -> None:
 
-        self.url = url
+        self.url = url,
         self.username = username,
         self.password = password,
         self.database = database,
