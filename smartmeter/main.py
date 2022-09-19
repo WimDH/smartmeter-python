@@ -122,8 +122,8 @@ async def queue_worker(
     """
     log = logging.getLogger()
     msg_count = 0
-    msg_pointer = 0
-    msg_last_time = 0
+    #msg_pointer = 0
+    #msg_last_time = 0
 
     while True:
         try:
@@ -135,7 +135,7 @@ async def queue_worker(
 
                 if db:
                     # Writing data to InfluxDB
-                    await db.write(data)
+                    db.write(data)
 
                 if load:
                     # See if we have to switch the connected load.
@@ -144,10 +144,10 @@ async def queue_worker(
             else:
                 await asyncio.sleep(0.1)
 
-            if int(time.monotonic()) % 60 == 0 and (int(time.monotonic()) - msg_last_time) > 5 :
-                log.info("The worker processed {} messages from the queue in the last minute. (delta {})".format(msg_count - msg_pointer))
-                msg_pointer = msg_count
-                msg_last_time = int(time.monotonic())
+            # if int(time.monotonic()) % 60 == 0 and (int(time.monotonic()) - msg_last_time) > 5 :
+            #     log.info("The worker processed {} messages from the queue in the last minute. (delta {})".format(msg_count, msg_count - msg_pointer))
+            #     msg_pointer = msg_count
+            #     msg_last_time = int(time.monotonic())
 
         except Exception:
             log.exception("Uncaught exception in queue worker!")
