@@ -49,8 +49,8 @@ class DbInflux:
             password=self.password,
             database=self.database,
             timeout=self.timeout,
-            verify_ssl=self.verify_ssl,
-            ssl_ca_cert=self.ssl_ca_cert
+            #verify_ssl=self.verify_ssl,
+            #ssl_ca_cert=self.ssl_ca_cert
         )
         db.write_points(points=record_list)
 
