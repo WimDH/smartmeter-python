@@ -135,7 +135,7 @@ async def queue_worker(
                 if load:
                     # See if we have to switch the connected load.
                     load.process(data)
-                    data.update({'load_status': load.load.is_on})
+                    data.update({'load_status': 1 if load.load.is_on else 0})
 
                 if db:
                     # Writing data to InfluxDB
