@@ -6,6 +6,7 @@ from smartmeter.utils import convert_timestamp
 
 LOG = logging.getLogger()
 
+
 class DbInflux:
     """
     Connect to Influx and write data.
@@ -49,8 +50,8 @@ class DbInflux:
             password=self.password,
             database=self.database,
             timeout=self.timeout,
-            #verify_ssl=self.verify_ssl,
-            #ssl_ca_cert=self.ssl_ca_cert
+            # verify_ssl=self.verify_ssl,
+            # ssl_ca_cert=self.ssl_ca_cert
         )
         db.write_points(points=record_list)
 
@@ -90,4 +91,11 @@ class DbInflux:
 
         LOG.debug(f"Gas data point: {g_data}")
 
-        return (e_data, g_data)
+        l_data = {
+            "measurement": "load",
+            "tags": {},
+            "time": convert_timestamp(data.get("gas_timestamp", "")),
+            "fields": {"load_enabled": data.get('load')}
+        }
+
+        return (e_data, g_data, l_data)

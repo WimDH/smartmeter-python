@@ -67,7 +67,7 @@ class Load:
 
     @property
     def is_off(self) -> Boolean:
-        """Retunr True is the load is off, else True."""
+        """Return True is the load is off, else True."""
         return not self.is_on
 
     @property
@@ -174,6 +174,7 @@ class LoadManager:
         """
         Process the data coming from the digital meter, and switch the load if needed.
         actual_injected and actual_consumed values are in kW.
+        Store the status of the load in Influx.
         """
         actual_injected = data.get("actual_total_injection", 0) * 1000
         actual_consumed = data.get("actual_total_consumption", 0) * 1000
