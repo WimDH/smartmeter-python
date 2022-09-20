@@ -94,8 +94,10 @@ class DbInflux:
         l_data = {
             "measurement": "load",
             "tags": {},
-            "time": convert_timestamp(data.get("gas_timestamp", "")),
-            "fields": {"load_enabled": data.get('load')}
+            "time": convert_timestamp(data.get("timestamp", "")),
+            "fields": {"load_on": data.get('load_status')}
         }
+
+        LOG.debug(f"Load data point: {l_data}")
 
         return (e_data, g_data, l_data)
