@@ -1,15 +1,10 @@
 import os
-import sys
 import pathlib
 import pytest
 import re
 from crccheck.crc import Crc16Lha
 from io import BytesIO
 from queue import Queue
-
-sys.path.append(
-    os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
-)
 
 from smartmeter.digimeter import parse, autoformat, check_msg, read_serial, serial
 

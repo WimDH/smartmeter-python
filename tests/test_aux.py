@@ -1,14 +1,7 @@
 import pytest
-import sys
-import os
-import pathlib
+import configparser
 from gpiozero import Device
 from gpiozero.pins.mock import MockFactory
-from time import sleep
-
-sys.path.append(
-    os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
-)
 from smartmeter.aux import LoadManager, Timer, Load
 
 Device.pin_factory = MockFactory()
@@ -29,7 +22,7 @@ def test_load_status(result):
     Test if we can get the status of the load: 1 if the load is on, 0 if the load is off.
     Also test if we can get the is_on and is_off values.
     """
-    load = Load(pin=24, name="test load", max_power=2300)
+    load = Load(name="test load", max_power=2300, switch_on=10, switch_off=10, hold_timer=10)
 
     load.on() if result is True else load.off
     assert load.status == (1 if result else 0)
@@ -37,53 +30,19 @@ def test_load_status(result):
     assert load.is_off is not result
 
 
-def test_loadmanager():
+def test_loadmanager_add_load():
     """
     Test the loadmanager.
     """
-    lm = LoadManager(
-        max_consume=500,  # Watt
-        max_inject=1500,  # Watt
-        consume_time=3,  # seconds
-        inject_time=3,  # seconds
-    )
+    load_cfg = configparser.ConfigParser()
+    load_cfg['load:aux'] = {
+        "max_power": "2300",
+        "switch_on": "75",
+        "switch_off": "10",
+        "hold_timer": "10"
+    }
 
-    lm.process(data={"actual_total_injection": 2, "actual_total_consumption": 0})
-    assert lm.timer.is_started is True
-    assert lm.timer.timer_type == "inject"
-    sleep(1)
-    assert lm.timer.elapsed >= 1
+    lm = LoadManager()
+    lm.add_load(load_cfg['load:aux'])
 
-    lm.process(data={"actual_total_injection": 1, "actual_total_consumption": 0})
-    assert lm.timer.is_started is True
-    assert lm.timer.timer_type == "inject"
-    assert lm.timer.elapsed < 1
-
-    lm.process(data={"actual_total_injection": 2, "actual_total_consumption": 0})
-    sleep(3)
-
-    lm.process(data={"actual_total_injection": 2, "actual_total_consumption": 0})
-    assert lm.timer.is_started is False
-    assert lm.load.is_on
-
-    lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.1})
-    assert lm.timer.is_started is False
-    assert lm.load.is_on
-
-    lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.5})
-    assert lm.timer.is_started is True
-    assert lm.timer.timer_type == "consume"
-    sleep(1)
-    assert lm.timer.elapsed >= 1
-
-    lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.1})
-    assert lm.timer.is_started is True
-    assert lm.timer.timer_type == "consume"
-    assert lm.timer.elapsed < 1
-
-    lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.6})
-    sleep(3)
-
-    lm.process(data={"actual_total_injection": 0, "actual_total_consumption": 0.55})
-    assert lm.timer.is_started is False
-    assert lm.load.is_off
+    assert len(lm.load_list) == 1

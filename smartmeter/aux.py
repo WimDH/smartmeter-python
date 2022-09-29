@@ -1,3 +1,4 @@
+import configparser
 import logging
 from typing import Union, Optional, Dict
 from time import time
@@ -30,13 +31,29 @@ class Load:
     switch_threshold is expressed in percent and represents the amount of power that has to come from the solar panels.
     """
 
-    def __init__(self, pin: int, name: str, max_power: int) -> None:
-        self._load = gpio.DigitalOutputDevice(
-            pin=pin, initial_value=False
-        )  # See pin numbering
-        self.gpio_pin: int = pin
-        self.name: str = name
-        self.max_power: float = max_power
+    def __init__(
+        self,
+        name: str,
+        max_power: int,
+        switch_on: int,
+        switch_off: int,
+        hold_timer: int,
+        address: Optional[str] = None,
+    ) -> None:
+        if not address:
+            self._load = gpio.DigitalOutputDevice(
+                pin=LOAD_PIN, initial_value=False
+            )  # See pin numbering
+            self.gpio_pin = LOAD_PIN
+        else:
+            self._load = address
+            self.gpio_pin = None
+
+        self.name = name
+        self.max_power = max_power
+        self.switch_on = switch_on
+        self.switch_off = switch_off
+        self.hold_timer = hold_timer
         self.state_start_time: Optional[float] = None
 
     @property
@@ -73,7 +90,7 @@ class Load:
     @property
     def current_power(self) -> float:
         """
-        Return how much power the load draws in Watt.
+        Return how much power the load consumes in Watt.
         For now it returns the max_power, until a current sensing mechanism is in place.
         """
         return self.max_power
@@ -156,87 +173,43 @@ class Timer:
 class LoadManager:
     """Manages a connected load."""
 
-    def __init__(
-        self, max_consume: int, max_inject: int, consume_time: int, inject_time: int
-    ) -> None:
-        # Setup the load
-        # pin GPIO24
-        self.max_consume = max_consume
-        self.max_inject = max_inject
-        self.consume_time = consume_time
-        self.inject_time = inject_time
-        self.load = Load(
-            pin=LOAD_PIN, name="car charger", max_power=230 * 10
-        )  # TODO: move to configfile so we can have more loads. Also update PCB!
+    def __init__(self) -> None:
+        self.load_list = []
         self.timer = Timer()
 
-    def process(self, data: Dict) -> None:
+    def add_load(self, load_config: configparser.SectionProxy) -> None:
         """
-        Process the data coming from the digital meter, and switch the load if needed.
-        actual_injected and actual_consumed values are in kW.
-        Store the status of the load in Influx.
+        Add a managed load.
+        The default aux load (load:aux) is connected to pin GPIO24
+
+        TODO: add other loads, the ones who connect over wifi or bluetooth.
         """
-        actual_injected = data.get("actual_total_injection", 0) * 1000
-        actual_consumed = data.get("actual_total_consumption", 0) * 1000
+        if not load_config.getboolean("enabled", False):
+            LOG.info("Load {} is not enabled.".format(load_config.name))
 
-        if (
-            actual_injected >= self.max_inject
-            and self.load.is_off
-            and not self.timer.is_started
-        ):
-            LOG.debug("Load manager: maximum inject threshold crossed, starting timer.")
-            self.timer.start(timer_type="inject")
-
-        elif (
-            actual_consumed >= self.max_consume
-            and self.load.is_on
-            and not self.timer.is_started
-        ):
-            LOG.debug(
-                "Load manager: maximum consume threshold crossed, starting timer."
+        LOG.info("Added load {}.".format(load_config.name))
+        self.load_list.append(
+            Load(
+                name=load_config.name[5:],
+                address=load_config.get("address", None),
+                max_power=load_config.getint("max_power"),
+                switch_on=load_config.getint("switch_on"),
+                switch_off=load_config.getint("switch_off"),
+                hold_timer=load_config.getint("hold_timer"),
             )
-            self.timer.start(timer_type="consume")
-
-        elif (
-            actual_injected < self.max_inject
-            and self.load.is_off
-            and self.timer.is_started
-        ) or (
-            actual_consumed < self.max_consume
-            and self.load.is_on
-            and self.timer.is_started
-        ):
-            LOG.debug(
-                f"Load manager: below the max set values, restarting timer for type {self.timer.timer_type}."
-            )
-            self.timer.restart()
-
-        elapsed_time = self.timer.elapsed if self.timer.is_started else "-"
-        load_state: str = "ON" if self.load.is_on else "OFF"
-        LOG.debug(
-            f"Load manager: load is: {load_state}, actual injected power: {actual_injected}W, actual consumed power: {actual_consumed}W, timer is started: {self.timer.is_started}, timer type: {self.timer.timer_type}, timer elapsed: {elapsed_time}s"  # noqa: E501
         )
 
-        # Switch on load only if we do not cross the maximum consume level.
-        if (
-            self.timer.timer_type == "inject"
-            and self.timer.elapsed >= self.inject_time
-            and abs(actual_injected - self.load.max_power) < self.max_consume
-        ):
-            LOG.info("Load manager: switching the load ON.")
-            self.load.on()
-            self.timer.stop()
+    def process(self, data: Dict) -> Dict:
+        """
+        Process the data coming from the digital meter, and switch the loads if needed.
+        Return the status for each load.
+        """
+        for load in self.load_list:
+            actual_injected = data.get("actual_total_injection", 0) * 1000
+            actual_consumed = data.get("actual_total_consumption", 0) * 1000
 
-        # Switch off load.
-        if (
-            self.timer.timer_type == "consume"
-            and self.timer.elapsed >= self.consume_time
-        ):
-            LOG.info(
-                f"Load manager: switching the load OFF after {self.load.state_time} seconds."
-            )
-            self.load.off()
-            self.timer.stop()
+             
+        return {}
 
 
 class Display:
@@ -370,12 +343,6 @@ class StatusLed:
     def blink(self, interval: Optional[int] = 1) -> None:
         """Make the status led blink."""
         self.led.blink(on_time=interval, off_time=interval)
-
-    # def test(self) -> None:
-    #     """Switch the LED on for 1 second."""
-    #     self.led.on()
-    #     sleep(1)
-    #     self.led.off()
 
     @property
     def status(self) -> Boolean:

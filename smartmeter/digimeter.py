@@ -84,7 +84,9 @@ def check_msg(raw_msg: bytearray) -> bool:
         LOG.debug("Telegram has a valid CRC.")
     else:
         LOG.warning(
-            "Telegram has an invalid CRC! Provided: {} - Calculated: {}".format(provided_crc, calculated_crc)
+            "Telegram has an invalid CRC! Provided: {} - Calculated: {}".format(
+                provided_crc, calculated_crc
+            )
         )
 
     return crc_match
@@ -163,9 +165,14 @@ def read_serial(
                 LOG.exception("Uncaught exception while reading from the serial port!")
                 pass
 
-            if int(time.monotonic()) % 60 == 0 and int(time.monotonic()) - telegram_last_time > 5:
+            if (
+                int(time.monotonic()) % 60 == 0
+                and int(time.monotonic()) - telegram_last_time > 5
+            ):
                 LOG.info(
-                    "Received {} telegrams from the digital meter in the last minute.".format(telegram_count - telegram_pointer)  # noqa E501
+                    "Received {} telegrams from the digital meter in the last minute.".format(
+                        telegram_count - telegram_pointer
+                    )  # noqa E501
                 )
                 telegram_pointer = telegram_count
                 telegram_last_time = int(time.monotonic())

@@ -11,6 +11,8 @@ from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, Buttons
 from smartmeter.utils import child_logger, main_logger
+
+
 import time
 
 try:
@@ -86,25 +88,24 @@ def main_worker(
     if influx_db_cfg:
         db = DbInflux(
             host=influx_db_cfg.get("host"),
+            path=influx_db_cfg.get("path"),
             username=influx_db_cfg.get("username"),
             password=influx_db_cfg.get("password"),
             database=influx_db_cfg.get("database"),
+            verify_ssl=influx_db_cfg.getboolean("verify_ssl"),
             timeout=influx_db_cfg.getint("timeout", 10000),
         )
 
     if load_cfg:
-        load = LoadManager(
-            max_consume=load_cfg.getint("max_consume"),
-            max_inject=load_cfg.getint("max_inject"),
-            consume_time=load_cfg.getint("consume_time"),
-            inject_time=load_cfg.getint("inject_time"),
-        )
-        log.debug("Start queue_worker routine")
-        asyncio.ensure_future(queue_worker(msg_q, db, load))
+        loads = LoadManager()
+        log.info("Adding the loads to the loadmanager.")
+        [loads.add_load(l) for l in load_cfg]
+        log.debug("Start queue_worker routine.")
+        asyncio.ensure_future(queue_worker(msg_q, db, loads))
 
     if not not_on_a_pi():
         # This only makes sense if we have the hardware connected.
-        log.debug("Start display_worker routine")
+        log.debug("Start display_worker routine.")
         asyncio.ensure_future(display_worker())
 
     loop.run_forever()
@@ -113,7 +114,7 @@ def main_worker(
 async def queue_worker(
     msg_queue: mp.Queue,
     db: Union[DbInflux, None],
-    load: Union[LoadManager, None],
+    loads: Union[LoadManager, None],
 ) -> None:
     """
     This worker reads from the queue, controls the load and sends the datapoints to an InfluxDB.
@@ -132,10 +133,9 @@ async def queue_worker(
 
                 log.debug("Got data from the queue: {}".format(data))
 
-                if load:
+                if loads:
                     # See if we have to switch the connected load.
-                    load.process(data)
-                    data.update({'load_status': 1 if load.load.is_on else 0})
+                    status = loads.process(data)
 
                 if db:
                     # Writing data to InfluxDB
@@ -145,10 +145,14 @@ async def queue_worker(
                 await asyncio.sleep(0.1)
 
             if (
-                int(time.monotonic()) % 60 == 0 and
-                (int(time.monotonic()) - msg_last_time) > 5
+                int(time.monotonic()) % 60 == 0
+                and (int(time.monotonic()) - msg_last_time) > 5
             ):
-                log.info("The worker processed {} messages from the queue in the last minute. (delta {})".format(msg_count, msg_count - msg_pointer))  # noqa E501
+                log.info(
+                    "The worker processed {} messages from the queue in the last minute. (delta {})".format(
+                        msg_count, msg_count - msg_pointer
+                    )
+                )  # noqa E501
                 msg_pointer = msg_count
                 msg_last_time = int(time.monotonic())
 
@@ -216,7 +220,7 @@ def main() -> None:
     log.debug("Board info: {}".format(str(gpio.pi_info())))
 
     influx_cfg: Union[configparser.SectionProxy, None] = None
-    load_cfg: Union[configparser.SectionProxy, None] = None
+    load_cfg: Union[List[configparser.SectionProxy], None] = None
 
     if "influx" in config.sections() and config.getboolean(
         section="influx", option="enabled"
@@ -226,13 +230,8 @@ def main() -> None:
     else:
         log.info("InfluxDB is disabled or not configured!")
 
-    if "load" in config.sections() and config.getboolean(
-        section="load", option="enabled"
-    ):
-        load_cfg = config["load"]
-        log.debug("Load management is enabled.")
-    else:
-        log.info("Load management is disabled or not configured!")
+    # Get all the loads from the configfile
+    load_cfg = [config[s] for s in config.sections() if s.startswith("load")]
 
     io_msg_q: mp.Queue = mp.Queue()
 

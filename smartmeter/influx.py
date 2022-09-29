@@ -17,6 +17,7 @@ class DbInflux:
     def __init__(
         self,
         host: str,
+        path: str,
         username: str,
         password: str,
         database: str,
@@ -26,6 +27,7 @@ class DbInflux:
     ) -> None:
 
         self.host = host
+        self.path = path
         self.username = username
         self.password = password
         self.database = database
@@ -46,12 +48,13 @@ class DbInflux:
 
         db = InfluxDBClient(
             host=self.host,
+            path=self.path,
             username=self.username,
             password=self.password,
             database=self.database,
             timeout=self.timeout,
-            # verify_ssl=self.verify_ssl,
-            # ssl_ca_cert=self.ssl_ca_cert
+            verify_ssl=self.verify_ssl,
+            # ssl_ca_cert=self.ssl_ca_cert,
         )
         db.write_points(points=record_list)
 
@@ -95,7 +98,7 @@ class DbInflux:
             "measurement": "load",
             "tags": {},
             "time": convert_timestamp(data.get("timestamp", "")),
-            "fields": {"load_on": data.get('load_status')}
+            "fields": {"load_on": data.get("load_status")},
         }
 
         LOG.debug(f"Load data point: {l_data}")

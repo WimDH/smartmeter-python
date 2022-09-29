@@ -71,7 +71,13 @@ def test_craft_json(valid_input_data) -> None:
         "time": "2021-10-24T19:50:05+02:00",
         "fields": {"total_gas_consumption": 3775.342},
     }
+    l_result = {
+        "fields": {"load_on": None},
+        "measurement": "load",
+        "tags": {},
+        "time": "2021-10-24T19:52:35+02:00",
+    }
 
     result = DbInflux.craft_json(valid_input_data)
 
-    assert result == (e_result, g_result)
+    assert result == (e_result, g_result, l_result)

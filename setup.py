@@ -23,14 +23,15 @@ setup(
         "Topic :: Utilities",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3 :: Only",
     ],
     keywords="digital meter, energy, electricity, power control",
     packages=find_packages(where="smartmeter"),
-    python_requires=">=3.6, <3.9",
+    python_requires=">=3.7",
     data_files=[("config.sample.ini", ["config.sample.ini"])],
     entry_points={
         "console_scripts": [
