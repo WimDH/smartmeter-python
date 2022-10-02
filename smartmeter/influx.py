@@ -37,7 +37,6 @@ class DbInflux:
 
         self.db = InfluxDBClient(
             host=self.host,
-            #path=self.path,
             username=self.username,
             password=self.password,
             database=self.database,
@@ -55,8 +54,9 @@ class DbInflux:
         """
         points_list: List = []
         for entry in data:
-                points_list += self.craft_json(entry)
+            points_list += self.craft_json(entry)
 
+        LOG.info("InfluxDB: writing {} measurements".format(len(points_list)))
         self.db.write_points(points=points_list)
 
     @property
@@ -90,7 +90,6 @@ class DbInflux:
                 if ("timestamp" not in key and "gas" not in key)
             },
         }
-
         LOG.debug(f"Electricity data point: {e_data}")
 
         # Gas data.
@@ -104,7 +103,6 @@ class DbInflux:
                 if ("timestamp" not in key and "gas" in key)
             },
         }
-
         LOG.debug(f"Gas data point: {g_data}")
 
         # Load data.
@@ -112,9 +110,8 @@ class DbInflux:
             "measurement": "load",
             "tags": {},
             "time": convert_timestamp(data.get("timestamp", "")),
-            "fields": {"load_on": data.get("load_status")},
+            "fields": {"load_on": data.get("load_status", 0)},
         }
-
         LOG.debug(f"Load data point: {l_data}")
 
         return [e_data, g_data, l_data]
