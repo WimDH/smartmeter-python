@@ -146,9 +146,9 @@ async def queue_worker(
                     if len(measurement_list) >= MAX_DATAPOINTS_CACHE:
                         measurement_list = measurement_list[1:]
 
-                    measurement_list.append[data]
+                    measurement_list.append(data)
                     if time.monotonic > start_time + upload_interval and db.is_reachable:
-                        db.write(data)
+                        db.write(measurement_list)
                         start_time = time.monotonic()
 
             else:
