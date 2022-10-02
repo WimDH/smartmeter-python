@@ -57,11 +57,3 @@ def test_load_config() -> None:
         ("verify_ssl", "yes"),
         ("bucket", "smartmeter"),
     ]
-
-
-# def test_setup_logging():
-#     """Test if we can setup the logging."""
-#     logger = setup_log(filename="testlog.log", size="1M", keep=2, log_to_stdout=True)
-
-#     assert isinstance(logger.handlers[0], logging.handlers.RotatingFileHandler)
-#     assert isinstance(logger.handlers[1], logging.StreamHandler)

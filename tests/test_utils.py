@@ -1,12 +1,4 @@
 import pytest
-# import sys
-# import os
-# import pathlib
-
-# sys.path.append(
-#     os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), ".."))
-# )
-
 from smartmeter.utils import (
     convert_from_human_readable,
     autoformat,

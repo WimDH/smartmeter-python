@@ -1,6 +1,6 @@
 import logging
 from influxdb import InfluxDBClient
-from typing import Dict, List, Tuple
+from typing import Dict, List
 from smartmeter.utils import convert_timestamp
 
 
@@ -53,12 +53,11 @@ class DbInflux:
         # TODO: return how many records were successfully written.
         # TODO: logging.
         """
-        record_list: List = []
+        points_list: List = []
         for entry in data:
-            for record in self.craft_json(data):
-                record_list.append(record)
+                points_list += self.craft_json(entry)
 
-        self.db.write_points(points=record_list)
+        self.db.write_points(points=points_list)
 
     @property
     def is_reachable(self) -> bool:
@@ -66,11 +65,14 @@ class DbInflux:
         Return True if the InfluxDB is reachable, else False.
         Log the error message is the DB is unreachable.
         """
-        return True if self.db.ping() else False
-
+        try:
+            return True if self.db.ping() else False
+        except ConnectionError:
+            LOG.critical("Influx database at {} is not reachable!".format(self.host))
+            return False
 
     @staticmethod
-    def craft_json(data: Dict) -> Tuple[Dict, Dict]:
+    def craft_json(data: Dict) -> List[Dict]:
         """
         Prepare the data to be written to InfluxDB.
         """
@@ -105,6 +107,7 @@ class DbInflux:
 
         LOG.debug(f"Gas data point: {g_data}")
 
+        # Load data.
         l_data = {
             "measurement": "load",
             "tags": {},
@@ -114,4 +117,4 @@ class DbInflux:
 
         LOG.debug(f"Load data point: {l_data}")
 
-        return (e_data, g_data, l_data)
+        return [e_data, g_data, l_data]

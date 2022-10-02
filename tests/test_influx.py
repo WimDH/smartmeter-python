@@ -1,9 +1,37 @@
+from typing import Dict
+from unittest.mock import Mock
 import pytest
-from smartmeter.influx import convert_timestamp, DbInflux
+import os
+import json
+from smartmeter.influx import convert_timestamp, DbInflux, InfluxDBClient
+
+
+def load_json_datapoints() -> json:
+    """Load the datapoints from a JSON file."""
+    data = None
+    with open(
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "testdata/datapoints.json"
+        )
+    ) as jf:
+        data = json.load(jf)
+
+    return data
+
+
+def fake_influx_connection() -> DbInflux:
+    return DbInflux(
+        host="127.0.0.1",
+        path="",
+        username="test",
+        password="test",
+        database="test",
+    )
 
 
 @pytest.fixture
-def valid_input_data():
+def valid_input_data() -> Dict:
     return {
         "local_timestamp": "2021-11-07T11:37:12.061909",
         "timestamp": "211024195235S",
@@ -81,3 +109,34 @@ def test_craft_json(valid_input_data) -> None:
     result = DbInflux.craft_json(valid_input_data)
 
     assert result == (e_result, g_result, l_result)
+
+
+def test_influxdb_ping() -> None:
+    """Test if we can check if the influxDB is reachable or not"""
+
+    db = fake_influx_connection()
+
+    InfluxDBClient.ping = Mock()
+    InfluxDBClient.ping.return_value = ' '
+    assert db.is_reachable is True
+
+    InfluxDBClient.ping = Mock()
+    InfluxDBClient.ping.side_effect = ConnectionError("mocked error!")
+    assert db.is_reachable is False
+
+
+def test_influxdb_write() -> None:
+    """
+    Test if we can write a list of datapoints to Influx.
+    TODO: improve test
+    """
+
+    data = load_json_datapoints()
+
+    db = fake_influx_connection()
+    InfluxDBClient.write_points = Mock()
+    InfluxDBClient.write_points.return_value = None
+
+    result = db.write(data)
+
+    assert result is None
