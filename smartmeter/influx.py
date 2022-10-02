@@ -37,7 +37,7 @@ class DbInflux:
 
         self.db = InfluxDBClient(
             host=self.host,
-            path=self.path,
+            #path=self.path,
             username=self.username,
             password=self.password,
             database=self.database,
