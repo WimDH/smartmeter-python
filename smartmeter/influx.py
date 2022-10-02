@@ -35,18 +35,7 @@ class DbInflux:
         self.timeout = timeout
         self.ssl_ca_cert = ssl_ca_cert
 
-    def write(self, data: Dict) -> None:
-        """
-        Write a telegram to InfluxDB.
-        # TODO: add counters for datapoints that are successfully written!
-        # TODO: return how manu records were successfully written.
-        # TODO: logging.
-        """
-        record_list: List = []
-        for record in self.craft_json(data):
-            record_list.append(record)
-
-        db = InfluxDBClient(
+        self.db = InfluxDBClient(
             host=self.host,
             path=self.path,
             username=self.username,
@@ -56,7 +45,29 @@ class DbInflux:
             verify_ssl=self.verify_ssl,
             # ssl_ca_cert=self.ssl_ca_cert,
         )
-        db.write_points(points=record_list)
+
+    def write(self, data: List) -> None:
+        """
+        Write datapoints to InfluxDB.
+        # TODO: add counters for datapoints that are successfully written!
+        # TODO: return how many records were successfully written.
+        # TODO: logging.
+        """
+        record_list: List = []
+        for entry in data:
+            for record in self.craft_json(data):
+                record_list.append(record)
+
+        self.db.write_points(points=record_list)
+
+    @property
+    def is_reachable(self) -> bool:
+        """
+        Return True if the InfluxDB is reachable, else False.
+        Log the error message is the DB is unreachable.
+        """
+        return True if self.db.ping() else False
+
 
     @staticmethod
     def craft_json(data: Dict) -> Tuple[Dict, Dict]:

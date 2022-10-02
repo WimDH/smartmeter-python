@@ -11,14 +11,16 @@ from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, Buttons
 from smartmeter.utils import child_logger, main_logger
-
-
 import time
 
 try:
     import gpiozero as gpio
 except ImportError:
     pass
+
+
+# How many measurements do we cache. Oldest ones are removed is cache is full.
+MAX_DATAPOINTS_CACHE = 10000
 
 
 def stopall_handler(signum, frame):
@@ -81,7 +83,6 @@ def main_worker(
     Spawns coroutines.
     """
     db = None
-    load = None
     loop = asyncio.get_event_loop()
     log = logging.getLogger()
 
@@ -101,7 +102,7 @@ def main_worker(
         log.info("Adding the loads to the loadmanager.")
         [loads.add_load(l) for l in load_cfg]
         log.debug("Start queue_worker routine.")
-        asyncio.ensure_future(queue_worker(msg_q, db, loads))
+        asyncio.ensure_future(queue_worker(msg_q, db, loads, influx_db_cfg.getint("upload_interval", 0)))
 
     if not not_on_a_pi():
         # This only makes sense if we have the hardware connected.
@@ -115,15 +116,18 @@ async def queue_worker(
     msg_queue: mp.Queue,
     db: Union[DbInflux, None],
     loads: Union[LoadManager, None],
+    upload_interval: Union[int, None],
 ) -> None:
     """
-    This worker reads from the queue, controls the load and sends the datapoints to an InfluxDB.
+    Read from the queue, control the load and send the datapoints to an InfluxDB.
     # TODO: Update status LED.
     """
     log = logging.getLogger()
     msg_count = 0
     msg_pointer = 0
     msg_last_time = 0
+    measurement_list = []
+    start_time = time.monotonic()
 
     while True:
         try:
@@ -135,11 +139,17 @@ async def queue_worker(
 
                 if loads:
                     # See if we have to switch the connected load.
-                    status = loads.process(data)
+                    loads.process(data)
 
                 if db:
                     # Writing data to InfluxDB
-                    db.write(data)
+                    if len(measurement_list) >= MAX_DATAPOINTS_CACHE:
+                        measurement_list = measurement_list[1:]
+
+                    measurement_list.append[data]
+                    if time.monotonic > start_time + upload_interval and db.is_reachable:
+                        db.write(data)
+                        start_time = time.monotonic()
 
             else:
                 await asyncio.sleep(0.1)

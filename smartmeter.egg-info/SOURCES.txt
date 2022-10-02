@@ -1,3 +1,4 @@
+LICENSE
 README.md
 config.sample.ini
 setup.py
