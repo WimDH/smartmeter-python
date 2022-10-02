@@ -147,7 +147,7 @@ async def queue_worker(
                         measurement_list = measurement_list[1:]
 
                     measurement_list.append(data)
-                    if time.monotonic > start_time + upload_interval and db.is_reachable:
+                    if time.monotonic() > start_time + upload_interval and db.is_reachable:
                         db.write(measurement_list)
                         start_time = time.monotonic()
 
