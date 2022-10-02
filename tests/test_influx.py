@@ -100,7 +100,7 @@ def test_craft_json(valid_input_data) -> None:
         "fields": {"total_gas_consumption": 3775.342},
     }
     l_result = {
-        "fields": {"load_on": None},
+        "fields": {"load_on": 0},
         "measurement": "load",
         "tags": {},
         "time": "2021-10-24T19:52:35+02:00",
@@ -108,7 +108,7 @@ def test_craft_json(valid_input_data) -> None:
 
     result = DbInflux.craft_json(valid_input_data)
 
-    assert result == (e_result, g_result, l_result)
+    assert result == [e_result, g_result, l_result]
 
 
 def test_influxdb_ping() -> None:
