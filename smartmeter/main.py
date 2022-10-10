@@ -20,7 +20,7 @@ except ImportError:
 
 
 # How many measurements do we cache. Oldest ones are removed is cache is full.
-MAX_DATAPOINTS_CACHE = 10000
+MAX_DATAPOINTS_CACHE = 90000
 
 
 def stopall_handler(signum, frame):
@@ -139,10 +139,10 @@ async def queue_worker(
 
                 if loads:
                     # See if we have to switch the connected load.
-                    loads.process(data)
+                    status = loads.process(data)
 
                 if db:
-                    # Writing data to InfluxDB
+                    # Writing data to InfluxDB. Allow to upload data in bulk.
                     if len(measurement_list) >= MAX_DATAPOINTS_CACHE:
                         measurement_list = measurement_list[1:]
 
@@ -162,7 +162,7 @@ async def queue_worker(
                     "The worker processed {} messages from the queue in the last minute. (delta {})".format(
                         msg_count, msg_count - msg_pointer
                     )
-                )  # noqa E501
+                )
                 msg_pointer = msg_count
                 msg_last_time = int(time.monotonic())
 
