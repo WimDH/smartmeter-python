@@ -107,75 +107,11 @@ class Load:
         return int(time() - self.state_start_time)
 
 
-class Timer:
-    """
-    Represents a timer that count how long the actual power crossed it's threshold (in seconds).
-    Two types are valid:
-        1. "inject": defines the maximum injected power.
-        2. "consume": defines the maximum consumed power.
-    """
-
-    def __init__(self) -> None:
-        self._start_time: Union[float, None] = None
-        self.timer_type: Union[str, None] = None
-
-    def start(self, timer_type: Optional[str]) -> None:
-        """
-        Start the timer.
-        """
-        if timer_type not in TIMER_TYPES:
-            raise ValueError(f"Timer type {timer_type} not in {TIMER_TYPES}")
-
-        LOG.debug(f"Timer: starting timer for {timer_type} threshold.")
-        self._start_time = time()
-        self.timer_type = timer_type
-
-    def stop(self) -> None:
-        """
-        Stop the timer.
-        """
-        LOG.debug(f"Timer: stopping timer on timer: {self.timer_type}.")
-        self._start_time = None
-        self.timer_type = None
-
-    def restart(self, timer_type: Optional[str] = None) -> None:
-        """Restart the timer, if the timer type is precified, set it as well, otherwise leave it as is."""
-        if timer_type:
-            LOG.debug(f"Setting threshold to {timer_type}")
-        else:
-            # We clear the timer time if we stop the timer.
-            t = self.timer_type
-
-        LOG.debug("Restarting timer.")
-        if self.is_started:
-            self.stop()
-        self.start(t or self.timer_type)
-
-    @property
-    def elapsed(self) -> int:
-        """
-        Return the number of seconds since the timer was started.
-        """
-        if self._start_time is None:
-            LOG.error("Timer: cannot calculate elapsed time, timer is not started!")
-            return -1
-
-        elapsed_seconds = int(time() - self._start_time)
-        LOG.debug(f"Timer: elaspsed time is {elapsed_seconds} seconds.")
-        return elapsed_seconds
-
-    @property
-    def is_started(self):
-        """return True if the timer is started, else False."""
-        return self._start_time is not None
-
-
 class LoadManager:
     """Manages a connected load."""
 
     def __init__(self) -> None:
         self.load_list = []
-        self.timer = Timer()
 
     def add_load(self, load_config: configparser.SectionProxy) -> None:
         """
@@ -203,13 +139,31 @@ class LoadManager:
         """
         Process the data coming from the digital meter, and switch the loads if needed.
         Return the status for each load.
+        TODO: define an order of switching on and off for all the loads
         """
         for load in self.load_list:
             actual_injected = data.get("actual_total_injection", 0) * 1000
             actual_consumed = data.get("actual_total_consumption", 0) * 1000
 
-             
-        return {}
+            if (
+                load.is_off and
+                actual_injected > load.switch_on and
+                (load.state_time is not None and load.state_time > load.hold_timer)
+            ):
+                load.on()
+                continue
+
+            if (
+                load.is_on and
+                load.state_timer > load.hold_timer and
+                (
+                    load.switch_off < 0 and actual_injected < abs(load.switch_off) or
+                    load.switch_off >= 0 and actual_consumed < abs(load.switch_off)
+                )
+            ):
+                load.off()
+
+        return {l.name: l.is_on for l in self.load_list}
 
 
 class Display:
