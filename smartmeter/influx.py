@@ -62,18 +62,6 @@ class DbInflux:
                 else:
                     LOG.debug(f"Datapoint successfully written: {data}")
 
-    @property
-    async def is_reachable(self) -> bool:
-        """
-        Return True if the InfluxDB is reachable, else False.
-        Log the error message is the DB is unreachable.
-        """
-        try:
-            return True if await self.db.ping() else False
-        except ConnectionError:
-            LOG.critical("Influx database at {} is not reachable!".format(self.host))
-            return False
-
     @staticmethod
     def craft_json(data: Dict) -> List[Dict]:
         """
