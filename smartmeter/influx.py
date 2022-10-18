@@ -54,7 +54,7 @@ class DbInflux:
             write_api = db.write_api()
             while len(record_list) > 0:
                 data = record_list.pop(0)
-                success = await write_api.write(bucket=self.bucket, record=data)
+                success = await write_api.write(bucket=self.bucket, record=data, org=self.org)
                 if not success:
                     LOG.warn(f"Unable to write datapoint: {data}")
                 else:
