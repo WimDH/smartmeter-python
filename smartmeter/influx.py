@@ -33,15 +33,6 @@ class DbInflux:
         self.timeout = timeout
         self.ssl_ca_cert = ssl_ca_cert
 
-        self.db = InfluxDBClientAsync(
-            url=self.url,
-            token=self.token,
-            org=self.org,
-            timeout=self.timeout,
-            verify_ssl=self.verify_ssl,
-            ssl_ca_cert=self.ssl_ca_cert,
-        )
-
     async def write(self, data: List) -> None:
         """
         Write a telegram to an influx bucket.
@@ -52,7 +43,14 @@ class DbInflux:
         for entry in data:
             record_list += self.craft_json(entry)
 
-        async with self.db as db:
+        async with InfluxDBClientAsync(
+            url=self.url,
+            token=self.token,
+            org=self.org,
+            timeout=self.timeout,
+            verify_ssl=self.verify_ssl,
+            ssl_ca_cert=self.ssl_ca_cert,
+        ) as db:
             write_api = db.write_api()
             while len(record_list) > 0:
                 data = record_list.pop(0)
