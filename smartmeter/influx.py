@@ -33,6 +33,15 @@ class DbInflux:
         self.timeout = timeout
         self.ssl_ca_cert = ssl_ca_cert
 
+        self.db = InfluxDBClientAsync(
+            url=self.url,
+            token=self.token,
+            org=self.org,
+            timeout=self.timeout,
+            verify_ssl=self.verify_ssl,
+            ssl_ca_cert=self.ssl_ca_cert,
+        )
+
     async def write(self, data: List) -> None:
         """
         Write a telegram to an influx bucket.
@@ -43,14 +52,7 @@ class DbInflux:
         for entry in data:
             record_list += self.craft_json(entry)
 
-        async with InfluxDBClientAsync(
-            url=self.url,
-            token=self.token,
-            org=self.org,
-            timeout=self.timeout,
-            verify_ssl=self.verify_ssl,
-            ssl_ca_cert=self.ssl_ca_cert,
-        ) as db:
+        async with self.db as db:
             write_api = db.write_api()
             while len(record_list) > 0:
                 data = record_list.pop(0)
@@ -61,13 +63,13 @@ class DbInflux:
                     LOG.debug(f"Datapoint successfully written: {data}")
 
     @property
-    def is_reachable(self) -> bool:
+    async def is_reachable(self) -> bool:
         """
         Return True if the InfluxDB is reachable, else False.
         Log the error message is the DB is unreachable.
         """
         try:
-            return True if self.db.ping() else False
+            return True if await self.db.ping() else False
         except ConnectionError:
             LOG.critical("Influx database at {} is not reachable!".format(self.host))
             return False
