@@ -151,7 +151,7 @@ async def queue_worker(
                     if (
                         time.monotonic() > start_time + upload_interval
                     ):
-                        db.write(measurement_list)
+                        await db.write(measurement_list)
                         start_time = time.monotonic()
 
             else:
