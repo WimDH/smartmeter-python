@@ -141,29 +141,34 @@ class LoadManager:
         Return the status for each load.
         TODO: define an order of switching on and off for all the loads
         """
+        load_status = {}
         for load in self.load_list:
             actual_injected = data.get("actual_total_injection", 0) * 1000
             actual_consumed = data.get("actual_total_consumption", 0) * 1000
 
             if (
-                load.is_off and
-                actual_injected > load.switch_on and
-                (load.state_time is not None and load.state_time > load.hold_timer)
+                load.is_off
+                and actual_injected > load.switch_on
+                and (load.state_time is not None and load.state_time > load.hold_timer)
             ):
                 load.on()
                 continue
 
             if (
-                load.is_on and
-                load.state_timer > load.hold_timer and
-                (
-                    load.switch_off < 0 and actual_injected < abs(load.switch_off) or
-                    load.switch_off >= 0 and actual_consumed < abs(load.switch_off)
+                load.is_on
+                and load.state_timer > load.hold_timer
+                and (
+                    load.switch_off < 0
+                    and actual_injected < abs(load.switch_off)
+                    or load.switch_off >= 0
+                    and actual_consumed < abs(load.switch_off)
                 )
             ):
                 load.off()
 
-        return {l.name: l.is_on for l in self.load_list}
+            load_status[load.name] = load.is_on
+
+        return load_status
 
 
 class Display:
@@ -280,8 +285,8 @@ class Buttons:
 
 class StatusLed:
     """
-    Maybe a class is a bit overkill here, but anyways...
-    This toggles the status led on or of. Or it returns it's current status.
+    Maybe a class is a bit overkill here.
+    This toggles the status led on or of, and return it's current status.
     """
 
     def __init__(self) -> None:

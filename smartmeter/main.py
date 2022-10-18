@@ -88,21 +88,22 @@ def main_worker(
 
     if influx_db_cfg:
         db = DbInflux(
-            host=influx_db_cfg.get("host"),
-            path=influx_db_cfg.get("path"),
-            username=influx_db_cfg.get("username"),
-            password=influx_db_cfg.get("password"),
-            database=influx_db_cfg.get("database"),
-            verify_ssl=influx_db_cfg.getboolean("verify_ssl"),
+            url=influx_db_cfg.get("url"),
+            token=influx_db_cfg.get("token"),
+            org=influx_db_cfg.get("org"),
+            bucket=influx_db_cfg.get("bucket"),
             timeout=influx_db_cfg.getint("timeout", 10000),
+            verify_ssl=influx_db_cfg.getboolean("verify_ssl", True),
         )
 
     if load_cfg:
         loads = LoadManager()
         log.info("Adding the loads to the loadmanager.")
         [loads.add_load(l) for l in load_cfg]
-        log.debug("Start queue_worker routine.")
-        asyncio.ensure_future(queue_worker(msg_q, db, loads, influx_db_cfg.getint("upload_interval", 0)))
+        log.debug("Start queue worker routine.")
+        asyncio.ensure_future(
+            queue_worker(msg_q, db, loads, influx_db_cfg.getint("upload_interval", 0))
+        )
 
     if not not_on_a_pi():
         # This only makes sense if we have the hardware connected.
@@ -147,7 +148,10 @@ async def queue_worker(
                         measurement_list = measurement_list[1:]
 
                     measurement_list.append(data)
-                    if time.monotonic() > start_time + upload_interval and db.is_reachable:
+                    if (
+                        time.monotonic() > start_time + upload_interval
+                        and db.is_reachable
+                    ):
                         db.write(measurement_list)
                         start_time = time.monotonic()
 
