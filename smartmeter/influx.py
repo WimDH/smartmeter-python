@@ -52,13 +52,24 @@ class DbInflux:
             ssl_ca_cert=self.ssl_ca_cert,
         ) as db:
             write_api = db.write_api()
+
+            success_cnt = 0
+            fail_cnt = 0
             while len(record_list) > 0:
                 data = record_list.pop(0)
                 success = await write_api.write(bucket=self.bucket, record=data, org=self.org)
                 if not success:
                     LOG.warn(f"Unable to write datapoint: {data}")
+                    fail_cnt += 1
                 else:
                     LOG.debug(f"Datapoint successfully written: {data}")
+                    success_cnt += 1
+
+            msg = f"{success_cnt + fail_cnt} Datapoints written: {fail_cnt} failed, {success_cnt} successful."
+            if fail_cnt > 0:
+                LOG.warn(msg)
+            else:
+                LOG.info(msg)
 
     @staticmethod
     def craft_json(data: Dict) -> List[Dict]:
