@@ -47,17 +47,7 @@ class DbInflux:
             verify_ssl=self.verify_ssl,
             ssl_ca_cert=self.ssl_ca_cert,
         ) as db:
-            with db.write_api(
-                write_options=WriteOptions(
-                    batch_size=60,
-                    flush_interval=60000,
-                    jitter_interval=2000,
-                    retry_interval=5000,
-                    max_retries=5,
-                    max_retry_delay=30000,
-                    exponential_base=2,
-                )
-            ) as write_api:
+            with db.write_api() as write_api:
                 await write_api.write(
                     bucket=self.bucket, record=self.craft_json(data), org=self.org
                 )
