@@ -41,14 +41,7 @@ def test_loadmanager_add_load():
     assert len(lm.load_list) == 1
 
 
-@pytest.mark.parametrize(
-    "injected,consumed",
-    [
-        (0, 0),
-        (2000, 0),
-        (3000, 0)
-    ]
-)
+@pytest.mark.parametrize("injected,consumed", [(0, 0), (2000, 0), (3000, 0)])
 def test_loadmanager_process(consumed, injected):
     """
     Testing the loadmanager processing the data received from the digital meter.
@@ -64,6 +57,8 @@ def test_loadmanager_process(consumed, injected):
     lm = LoadManager()
     lm.add_load(load_cfg["load:aux"])
 
-    processed = lm.process({"actual_total_injection": injected, "actual_total_consumption": consumed})
+    processed = lm.process(
+        {"actual_total_injection": injected, "actual_total_consumption": consumed}
+    )
 
     assert processed == {"aux": False}

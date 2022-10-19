@@ -19,10 +19,6 @@ except ImportError:
     pass
 
 
-# How many measurements do we cache. Oldest ones are removed is cache is full.
-MAX_DATAPOINTS_CACHE = 90000
-
-
 def stopall_handler(signum, frame):
     """Stops all processes and swicthes off the load and clears the display."""
     log = logging.getLogger()
@@ -125,10 +121,6 @@ async def queue_worker(
     """
     log = logging.getLogger()
     msg_count = 0
-    msg_pointer = 0
-    msg_last_time = 0
-    measurement_list = []
-    start_time = time.monotonic()
 
     while True:
         try:
@@ -143,31 +135,10 @@ async def queue_worker(
                     status = loads.process(data)
 
                 if db:
-                    # Writing data to InfluxDB. Allow to upload data in bulk.
-                    if len(measurement_list) >= MAX_DATAPOINTS_CACHE:
-                        measurement_list = measurement_list[1:]
-
-                    measurement_list.append(data)
-                    if (
-                        time.monotonic() > start_time + upload_interval
-                    ):
-                        await db.write(measurement_list)
-                        start_time = time.monotonic()
+                    await db.write(data)
 
             else:
                 await asyncio.sleep(0.1)
-
-            if (
-                int(time.monotonic()) % 60 == 0
-                and (int(time.monotonic()) - msg_last_time) > 5
-            ):
-                log.info(
-                    "The worker processed {} messages from the queue in the last minute. (delta {})".format(
-                        msg_count, msg_count - msg_pointer
-                    )
-                )
-                msg_pointer = msg_count
-                msg_last_time = int(time.monotonic())
 
         except Exception:
             log.exception("Uncaught exception in queue worker!")

@@ -1,5 +1,6 @@
 import logging
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
+from influxdb_client import WriteOptions
 from typing import Dict, List
 from smartmeter.utils import convert_timestamp
 
@@ -33,16 +34,11 @@ class DbInflux:
         self.timeout = timeout
         self.ssl_ca_cert = ssl_ca_cert
 
-    async def write(self, data: List) -> None:
+    async def write(self, data: Dict) -> None:
         """
         Write a telegram to an influx bucket.
-        # TODO: add counters for datapoints that are successfully written!
-        # TODO: return how manu records were successfully written.
+        TODO: support batching from the client itself.
         """
-        record_list: List = []
-        for entry in data:
-            record_list += self.craft_json(entry)
-
         async with InfluxDBClientAsync(
             url=self.url,
             token=self.token,
@@ -51,25 +47,20 @@ class DbInflux:
             verify_ssl=self.verify_ssl,
             ssl_ca_cert=self.ssl_ca_cert,
         ) as db:
-            write_api = db.write_api()
-
-            success_cnt = 0
-            fail_cnt = 0
-            while len(record_list) > 0:
-                data = record_list.pop(0)
-                success = await write_api.write(bucket=self.bucket, record=data, org=self.org)
-                if not success:
-                    LOG.warn(f"Unable to write datapoint: {data}")
-                    fail_cnt += 1
-                else:
-                    LOG.debug(f"Datapoint successfully written: {data}")
-                    success_cnt += 1
-
-            msg = f"{success_cnt + fail_cnt} Datapoints written: {fail_cnt} failed, {success_cnt} successful."
-            if fail_cnt > 0:
-                LOG.warn(msg)
-            else:
-                LOG.info(msg)
+            with db.write_api(
+                write_options=WriteOptions(
+                    batch_size=60,
+                    flush_interval=60000,
+                    jitter_interval=2000,
+                    retry_interval=5000,
+                    max_retries=5,
+                    max_retry_delay=30000,
+                    exponential_base=2,
+                )
+            ) as write_api:
+                await write_api.write(
+                    bucket=self.bucket, record=self.craft_json(data), org=self.org
+                )
 
     @staticmethod
     def craft_json(data: Dict) -> List[Dict]:

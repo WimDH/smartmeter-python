@@ -171,6 +171,7 @@ class LoadManager:
         # return load_status
         return {}
 
+
 class Display:
     """
     Class to manage the oled display.
