@@ -47,10 +47,10 @@ class DbInflux:
             verify_ssl=self.verify_ssl,
             ssl_ca_cert=self.ssl_ca_cert,
         ) as db:
-            with db.write_api() as write_api:
-                await write_api.write(
-                    bucket=self.bucket, record=self.craft_json(data), org=self.org
-                )
+            write_api = db.write_api()
+            await write_api.write(
+                bucket=self.bucket, record=self.craft_json(data), org=self.org
+            )
 
     @staticmethod
     def craft_json(data: Dict) -> List[Dict]:
