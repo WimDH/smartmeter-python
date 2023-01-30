@@ -106,7 +106,7 @@ class CSVWriter:
     @property
     def filename(self) -> Union[str, None]:
         """
-        Returns the filename or None
+        Returns the filename or None.
         """
         return self.filehandler.name or None
 
