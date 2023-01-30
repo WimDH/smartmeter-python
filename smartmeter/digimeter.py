@@ -10,7 +10,7 @@ from time import sleep
 import time
 from smartmeter.utils import convert_timestamp, calculate_timestamp_drift, autoformat
 
-LOG = logging.getLogger()
+LOG = logging.getLogger(__name__)
 START_OF_TELEGRAM = re.compile(r"^\/FLU\d{1}\\")
 END_OF_TELEGRAM = re.compile(r"^![A-Z0-9]{4}")
 FIELDS = [

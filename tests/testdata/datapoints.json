@@ -1,6 +1,6 @@
 [
     {
-        "local_timestamp": "20222-01-07T00:00:01.00000",
+        "local_timestamp": "2022-01-01-07T00:00:01.00000",
         "timestamp": "220101000001S",
         "total_consumption_day": 4248.198,
         "total_consumption_night": 6615.642,
@@ -25,7 +25,7 @@
         "gas_timestamp": "220101000001S"
     },
     {
-        "local_timestamp": "20222-01-07T00:00:02.00000",
+        "local_timestamp": "2022-01-01-07T00:00:02.00000",
         "timestamp": "220101000002S",
         "total_consumption_day": 4248.198,
         "total_consumption_night": 6615.642,

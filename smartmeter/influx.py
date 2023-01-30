@@ -1,11 +1,10 @@
 import logging
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
-from influxdb_client import WriteOptions
 from typing import Dict, List
 from smartmeter.utils import convert_timestamp
+from time import monotonic
 
-
-LOG = logging.getLogger()
+LOG = logging.getLogger(__name__)
 
 
 class DbInflux:
@@ -33,12 +32,18 @@ class DbInflux:
         self.verify_ssl = verify_ssl
         self.timeout = timeout
         self.ssl_ca_cert = ssl_ca_cert
+        self.start_time = monotonic()
+        self.batch = []
 
-    async def write(self, data: Dict) -> None:
+    async def write(self, data: Dict, upload_interval: int = 0) -> None:
         """
         Write a telegram to an influx bucket.
-        TODO: support batching from the client itself.
         """
+        if upload_interval > 0:
+            self.batch.append(self.craft_json(data))
+        else:
+            self.batch = [self.craft_json(data)]
+
         async with InfluxDBClientAsync(
             url=self.url,
             token=self.token,
@@ -48,9 +53,7 @@ class DbInflux:
             ssl_ca_cert=self.ssl_ca_cert,
         ) as db:
             write_api = db.write_api()
-            await write_api.write(
-                bucket=self.bucket, record=self.craft_json(data), org=self.org
-            )
+            await write_api.write(bucket=self.bucket, record=self.batch, org=self.org)
 
     @staticmethod
     def craft_json(data: Dict) -> List[Dict]:

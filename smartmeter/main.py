@@ -11,7 +11,6 @@ from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
 from smartmeter.aux import Display, LoadManager, Buttons
 from smartmeter.utils import child_logger, main_logger
-import time
 
 try:
     import gpiozero as gpio
@@ -20,7 +19,7 @@ except ImportError:
 
 
 def stopall_handler(signum, frame):
-    """Stops all processes and swicthes off the load and clears the display."""
+    """Stop all processes, swicth off the load and clear the display."""
     log = logging.getLogger()
     log.warning("Signal handler called with signal {}".format(signum))
     log.info("---Shutdown---")
@@ -135,7 +134,8 @@ async def queue_worker(
                     status = loads.process(data)
 
                 if db:
-                    await db.write(data)
+                    # InfluxDB
+                    await db.write(data, upload_interval)
 
             else:
                 await asyncio.sleep(0.1)

@@ -1,6 +1,6 @@
 import configparser
 import logging
-from typing import Union, Optional, Dict
+from typing import Optional, Dict
 from time import time
 from xmlrpc.client import Boolean
 from PIL import Image, ImageDraw, ImageFont
@@ -18,7 +18,7 @@ try:
 except ImportError:
     pass
 
-LOG = logging.getLogger()
+LOG = logging.getLogger(__name__)
 TIMER_TYPES = ["consume", "inject"]
 LOAD_PIN = 24
 
@@ -141,35 +141,34 @@ class LoadManager:
         Return the status for each load.
         TODO: define an order of switching on and off for all the loads
         """
-        # load_status = {}
-        # for load in self.load_list:
-        #     actual_injected = data.get("actual_total_injection", 0) * 1000
-        #     actual_consumed = data.get("actual_total_consumption", 0) * 1000
+        load_status = {}
+        for load in self.load_list:
+            actual_injected = data.get("actual_total_injection", 0) * 1000
+            actual_consumed = data.get("actual_total_consumption", 0) * 1000
 
-        #     if (
-        #         load.is_off
-        #         and actual_injected > load.switch_on
-        #         and (load.state_time is not None and load.state_time > load.hold_timer)
-        #     ):
-        #         load.on()
-        #         continue
+            if (
+                load.is_off
+                and actual_injected > load.switch_on
+                and (load.state_time is not None and load.state_time > load.hold_timer)
+            ):
+                load.on()
+                continue
 
-        #     if (
-        #         load.is_on
-        #         and load.state_timer > load.hold_timer
-        #         and (
-        #             load.switch_off < 0
-        #             and actual_injected < abs(load.switch_off)
-        #             or load.switch_off >= 0
-        #             and actual_consumed < abs(load.switch_off)
-        #         )
-        #     ):
-        #         load.off()
+            if (
+                load.is_on
+                and load.state_timer > load.hold_timer
+                and (
+                    load.switch_off < 0
+                    and actual_injected < abs(load.switch_off)
+                    or load.switch_off >= 0
+                    and actual_consumed < abs(load.switch_off)
+                )
+            ):
+                load.off()
 
-        #     load_status[load.name] = load.is_on
+            load_status[load.name] = load.is_on
 
-        # return load_status
-        return {}
+        return load_status
 
 
 class Display:

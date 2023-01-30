@@ -56,7 +56,10 @@ def one_msg() -> str:
 
 
 def test_parse_message(one_msg):
-    """Test parsing of one message coming from the meter."""
+    """
+    Test parsing of one message coming from the meter.
+    TODO: improve test
+    """
     msg = parse(one_msg)
 
     assert isinstance(msg["local_timestamp"], str)
@@ -94,7 +97,7 @@ def test_autoformat():
 def test_read_serial(monkeypatch, msg_stream):
     """
     Test the main loop. It reads data from the serial port.
-    todo: improve test by checking content of the queue.
+    TODO: improve test by checking content of the queue.
     """
 
     def mock_stream(*args, **kwargs):
