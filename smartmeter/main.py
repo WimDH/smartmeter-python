@@ -9,6 +9,7 @@ import logging
 import multiprocessing as mp
 from smartmeter.digimeter import read_serial, fake_serial
 from smartmeter.influx import DbInflux
+from smartmeter.csv_writer import CSVWriter
 from smartmeter.aux import Display, LoadManager, Buttons
 from smartmeter.utils import child_logger, main_logger
 
@@ -71,6 +72,7 @@ def main_worker(
     log_q: mp.Queue,
     msg_q: mp.Queue,
     influx_db_cfg: Optional[configparser.SectionProxy],
+    csv_cfg: Optional[configparser.SectionProxy],
     load_cfg: Optional[configparser.SectionProxy],
 ) -> None:
     """
@@ -81,7 +83,7 @@ def main_worker(
     loop = asyncio.get_event_loop()
     log = logging.getLogger()
 
-    if influx_db_cfg:
+    if influx_db_cfg and influx_db_cfg.getboolean("enabled"):
         db = DbInflux(
             url=influx_db_cfg.get("url"),
             token=influx_db_cfg.get("token"),
@@ -91,13 +93,24 @@ def main_worker(
             verify_ssl=influx_db_cfg.getboolean("verify_ssl", True),
         )
 
+    if csv_cfg and csv_cfg.getboolean("enabled"):
+        csv_writer = CSVWriter(
+            prefix=influx_db_cfg.get("file_prefix", "smartmeter_"),
+            path=influx_db_cfg.get("path"),
+            write_header=influx_db_cfg.getboolean("write_header", True),
+            write_every=influx_db_cfg.get("write_every", 30),
+            max_lines=influx_db_cfg.get("max_lines"),
+            max_age=influx_db_cfg.get("max_age"),
+        )
+
     if load_cfg:
         loads = LoadManager()
         log.info("Adding the loads to the loadmanager.")
         [loads.add_load(l) for l in load_cfg]
-        log.debug("Start queue worker routine.")
-        asyncio.ensure_future(
-            queue_worker(msg_q, db, loads, influx_db_cfg.getint("upload_interval", 0))
+    
+    log.debug("Start queue worker routine.")
+    asyncio.ensure_future(
+            queue_worker(msg_q, db, csv_writer, loads, influx_db_cfg.getint("upload_interval", 0))
         )
 
     if not not_on_a_pi():
@@ -111,6 +124,7 @@ def main_worker(
 async def queue_worker(
     msg_queue: mp.Queue,
     db: Union[DbInflux, None],
+    csv_writer: Union[CSVWriter, None],
     loads: Union[LoadManager, None],
     upload_interval: Union[int, None],
 ) -> None:
@@ -131,11 +145,15 @@ async def queue_worker(
 
                 if loads:
                     # See if we have to switch the connected load.
-                    status = loads.process(data)
+                    loads.process(data)
 
                 if db:
                     # InfluxDB
                     await db.write(data, upload_interval)
+                
+                if csv_writer:
+                    # CSV writer
+                    csv_writer.write(data)
 
             else:
                 await asyncio.sleep(0.1)
