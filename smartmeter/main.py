@@ -68,8 +68,8 @@ def load_config(configfile: str) -> configparser.ConfigParser:
 
 
 def main_worker(
-    loglevel: str,
-    log_q: mp.Queue,
+    #loglevel: str,
+    #log_q: mp.Queue,
     msg_q: mp.Queue,
     influx_db_cfg: Optional[configparser.SectionProxy],
     csv_cfg: Optional[configparser.SectionProxy],
@@ -82,7 +82,8 @@ def main_worker(
     db = None
     csv_writer = None
     loop = asyncio.get_event_loop()
-    log = logging.getLogger()
+    #log = logging.getLogger()
+    #log = child_logger(loglevel, log_q)
 
     if influx_db_cfg and influx_db_cfg.getboolean("enabled"):
         db = DbInflux(
@@ -111,7 +112,7 @@ def main_worker(
 
     log.debug("Start queue worker routine.")
     asyncio.ensure_future(
-            queue_worker(msg_q, db, csv_writer, loads, influx_db_cfg.getint("upload_interval", 0))
+            queue_reader(msg_q, db, csv_writer, loads, influx_db_cfg.getint("upload_interval", 0))
         )
 
     if not not_on_a_pi():
@@ -122,7 +123,7 @@ def main_worker(
     loop.run_forever()
 
 
-async def queue_worker(
+async def queue_reader(
     msg_queue: mp.Queue,
     db: Union[DbInflux, None],
     csv_writer: Union[CSVWriter, None],
@@ -133,8 +134,8 @@ async def queue_worker(
     Read from the queue, control the load and send the datapoints to an InfluxDB.
     # TODO: Update status LED.
     """
-    log = logging.getLogger()
-    log.debug("Starting queue worker.")
+    #log = logging.getLogger()
+    log.debug("Starting queue reader.")
     msg_count = 0
 
     while True:
@@ -215,6 +216,7 @@ def main() -> None:
     )
     log_process.start()
 
+    global log
     log = child_logger(log_level, log_queue)
     log.info("---Start---")
 
@@ -279,7 +281,7 @@ def main() -> None:
         )
         fake_serial_process.start()
 
-    log.info("Starting worker.")
+    log.info("Starting dispatcher process.")
     dispatcher_process = mp.Process(
         target=main_worker, args=(log_level, log_queue, io_msg_q, influx_cfg, csv_cfg, load_cfg)
     )

@@ -4,7 +4,7 @@ from typing import Dict, List
 from smartmeter.utils import convert_timestamp
 from time import monotonic
 
-LOG = logging.getLogger(__name__)
+#LOG = logging.getLogger(__name__)
 
 
 class DbInflux:
@@ -61,7 +61,7 @@ class DbInflux:
         Prepare the data to be written to InfluxDB.
         """
 
-        LOG.debug("Crafting Influx datapoints.")
+        log.debug("Crafting Influx datapoints.")
 
         # Electricity data.
         e_data = {
@@ -74,7 +74,7 @@ class DbInflux:
                 if ("timestamp" not in key and "gas" not in key)
             },
         }
-        LOG.debug(f"Electricity data point: {e_data}")
+        log.debug(f"Electricity data point: {e_data}")
 
         # Gas data.
         g_data = {
@@ -87,7 +87,7 @@ class DbInflux:
                 if ("timestamp" not in key and "gas" in key)
             },
         }
-        LOG.debug(f"Gas data point: {g_data}")
+        log.debug(f"Gas data point: {g_data}")
 
         # Load data.
         l_data = {
@@ -96,6 +96,6 @@ class DbInflux:
             "time": convert_timestamp(data.get("timestamp", "")),
             "fields": {"load_on": data.get("load_status", 0)},
         }
-        LOG.debug(f"Load data point: {l_data}")
+        log.debug(f"Load data point: {l_data}")
 
         return [e_data, g_data, l_data]
