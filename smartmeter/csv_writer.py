@@ -1,12 +1,12 @@
 import csv
-import logging
+from smartmeter.utils import get_queue_logger
 import os
 from typing import Optional, Union
 from datetime import datetime
 from time import monotonic, sleep
 from smartmeter.digimeter import FIELDS
 
-LOG = logging.getLogger(__name__)
+LOG = get_queue_logger()
 FIELDNAMES = [f[1] for f in FIELDS]
 WIP_PREFIX = ".wip__"
 
