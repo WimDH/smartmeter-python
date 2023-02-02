@@ -7,7 +7,7 @@ Besides switching load, the application can export the data to an InfluxDB, or t
 
 ## Design
 Smartmeter is tested on a Raspberry Pi, but in can also run on a PC/server. During the development and initial testing, I used an old Raspberry Pi (model B rev. 2). Some of the design decisions are based upon this old model. I thought if it can run an an old pi, it must work on the newer versions as well.
-![Old pi model B rev. 2](https://nl.m.wikipedia.org/wiki/Bestand:Raspberry_Pi_Model_B_Rev._2.jpg)
+![Old pi model B rev. 2](https://upload.wikimedia.org/wikipedia/commons/3/3b/Raspberry_Pi_Model_B_Rev._2.jpg)
 ### How it works high level
 The application is running in 2 different processes (using Python's `multiprocessing` library). One is running the process to collect the data from the serial port of the meter (and some basic processing is done as well), and the other process is taking care of all the post-processing actions (like uploading the data to the InfluxDB, switching relays on and off, ...)
 
