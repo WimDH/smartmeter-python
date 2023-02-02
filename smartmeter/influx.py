@@ -1,10 +1,10 @@
-import logging
+from smartmeter.utils import get_queue_logger
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 from typing import Dict, List
 from smartmeter.utils import convert_timestamp
 from time import monotonic
 
-#LOG = logging.getLogger(__name__)
+log = get_queue_logger()
 
 
 class DbInflux:
