@@ -70,6 +70,7 @@ def load_config(configfile: str) -> configparser.ConfigParser:
 
 def main_worker(
     log_q: mp.Queue,
+    log_level: str,
     msg_q: mp.Queue,
     influx_db_cfg: Optional[configparser.SectionProxy],
     csv_cfg: Optional[configparser.SectionProxy],
@@ -83,11 +84,10 @@ def main_worker(
     csv_writer = None
     loop = asyncio.get_event_loop()
     global log
-    log = child_logger(log_q)
+    log = child_logger(log_q, log_level)
 
     if influx_db_cfg and influx_db_cfg.getboolean("enabled"):
         db = DbInflux(
-            log_q=log_q,
             url=influx_db_cfg.get("url"),
             token=influx_db_cfg.get("token"),
             org=influx_db_cfg.get("org"),
@@ -98,7 +98,6 @@ def main_worker(
 
     if csv_cfg and csv_cfg.getboolean("enabled"):
         csv_writer = CSVWriter(
-            log_q=log_q,
             prefix=influx_db_cfg.get("file_prefix", "smartmeter_"),
             path=influx_db_cfg.get("path"),
             write_header=influx_db_cfg.getboolean("write_header", True),
@@ -202,6 +201,7 @@ def main() -> None:
     args = parse_cli(sys.argv[1:])
     config = load_config(args.configfile)
     log_queue = mp.Queue()
+    log_level = config.get(section="logging", option="loglevel")
     log_process = mp.Process(
         target=main_logger,
         args=(
@@ -212,12 +212,12 @@ def main() -> None:
             config.getboolean(section="logging", option="log_to_stdout"),
             config.getint(section="logging", option="keep"),
             config.get(section="logging", option="size"),
-            config.get(section="logging", option="loglevel"),
+            log_level
         ),
     )
     log_process.start()
 
-    log = child_logger(log_queue)
+    log = child_logger(log_queue, log_level)
     log.info("---Start---")
 
     if not_on_a_pi():

@@ -1,9 +1,7 @@
-from smartmeter.utils import child_logger
 from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 from typing import Dict, List
 from smartmeter.utils import convert_timestamp
 from time import monotonic
-import multiprocessing as mp
 
 
 class DbInflux:
@@ -12,10 +10,10 @@ class DbInflux:
     TODO: if influxdb is unreachable, cache the result and
           write them to the DB when the connection is back up.
     """
+    global log
 
     def __init__(
         self,
-        log_q: mp.Queue,
         url: str,
         token: str,
         org: str,
@@ -26,7 +24,6 @@ class DbInflux:
     ) -> None:
 
         self.url = url
-        self.log = child_logger(log_q)
         self.token = token
         self.org = org
         self.bucket = bucket
@@ -74,7 +71,7 @@ class DbInflux:
                 if ("timestamp" not in key and "gas" not in key)
             },
         }
-        self.log.debug(f"Electricity data point: {e_data}")
+        log.debug(f"Electricity data point: {e_data}")
 
         # Gas data.
         g_data = {
@@ -87,7 +84,7 @@ class DbInflux:
                 if ("timestamp" not in key and "gas" in key)
             },
         }
-        self.log.debug(f"Gas data point: {g_data}")
+        log.debug(f"Gas data point: {g_data}")
 
         # Load data.
         l_data = {
@@ -96,6 +93,6 @@ class DbInflux:
             "time": convert_timestamp(data.get("timestamp", "")),
             "fields": {"load_on": data.get("load_status", 0)},
         }
-        self.log.debug(f"Load data point: {l_data}")
+        log.debug(f"Load data point: {l_data}")
 
         return [e_data, g_data, l_data]

@@ -67,7 +67,7 @@ class CSVWriter:
             return
 
         filename = self._generate_filename()
-        LOG.info("Creating CSV file {}".format(filename))
+        log.info("Creating CSV file {}".format(filename))
         self.filehandler = open(filename, "w")
         self.dictwriter = csv.DictWriter(self.filehandler, fieldnames=FIELDNAMES)
         self.dictwriter.writeheader()
@@ -83,16 +83,16 @@ class CSVWriter:
 
         # Write the remainder of the rows.
         if flush is True and len(self.batch) > 0:
-            LOG.debug("Writing the remainder of the rows.")
+            log.debug("Writing the remainder of the rows.")
             self.write(flush=True)
             return
 
         filename = self.filename
-        LOG.debug("Closing file {}.".format(self.filename))
+        log.debug("Closing file {}.".format(self.filename))
         self.filehandler.close()
         # If no rows have been written to the file, we can remove it.
         if self.lines_written == 0:
-            LOG.debug(
+            log.debug(
                 "Removing file {} since no rows were written to it.".format(filename)
             )
             os.unlink(filename)
@@ -100,7 +100,7 @@ class CSVWriter:
             new_filename = os.path.join(
                 self.path, os.path.split(filename)[1][len(WIP_PREFIX) :]
             )
-            LOG.debug("Renaming file to {}.".format(new_filename))
+            log.debug("Renaming file to {}.".format(new_filename))
             os.rename(filename, new_filename)
 
     @property

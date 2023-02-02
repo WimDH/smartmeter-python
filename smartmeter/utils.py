@@ -47,11 +47,12 @@ def main_logger(
         logger.handle(log_record)
 
 
-def child_logger(queue):
+def child_logger(queue, log_level="info"):
     """
     Create a logger for the child processes.
     """
     logger = logging.getLogger("smartmeter")
+    logger.setLevel(getattr(logging, log_level.upper()))
     logger.addHandler(QueueHandler(queue))
 
     return logger

@@ -107,7 +107,6 @@ def read_serial(
     _quit_after is only used during testing to break the infinite loop while reading from the serial port.
     """
     global log
-    log = child_logger(log_q)
     telegram_count: int = 0
     telegram_pointer: int = 0
     telegram_last_time = 0
