@@ -134,6 +134,7 @@ async def queue_worker(
     # TODO: Update status LED.
     """
     log = logging.getLogger()
+    log.debug("Starting queue worker.")
     msg_count = 0
 
     while True:
