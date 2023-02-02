@@ -68,8 +68,8 @@ def load_config(configfile: str) -> configparser.ConfigParser:
 
 
 def main_worker(
-    #loglevel: str,
-    #log_q: mp.Queue,
+    loglevel: str,
+    log_q: mp.Queue,
     msg_q: mp.Queue,
     influx_db_cfg: Optional[configparser.SectionProxy],
     csv_cfg: Optional[configparser.SectionProxy],
@@ -82,8 +82,8 @@ def main_worker(
     db = None
     csv_writer = None
     loop = asyncio.get_event_loop()
-    #log = logging.getLogger()
-    #log = child_logger(loglevel, log_q)
+    global log
+    log = child_logger(loglevel, log_q)
 
     if influx_db_cfg and influx_db_cfg.getboolean("enabled"):
         db = DbInflux(
