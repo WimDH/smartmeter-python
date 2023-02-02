@@ -8,9 +8,8 @@ from queue import Queue
 from datetime import datetime
 from time import sleep
 import time
-from smartmeter.utils import convert_timestamp, calculate_timestamp_drift, autoformat
+from smartmeter.utils import convert_timestamp, calculate_timestamp_drift, autoformat, child_logger
 
-LOG = logging.getLogger(__name__)
 START_OF_TELEGRAM = re.compile(r"^\/FLU\d{1}\\")
 END_OF_TELEGRAM = re.compile(r"^![A-Z0-9]{4}")
 FIELDS = [
@@ -43,7 +42,7 @@ FIELDS = [
 def parse(raw_msg):
     """Parse the raw message."""
 
-    LOG.debug("Parsing raw telegram.")
+    log.debug("Parsing raw telegram.")
 
     msg = {"local_timestamp": datetime.now().isoformat()}
 
@@ -65,7 +64,7 @@ def check_msg(raw_msg: bytearray) -> bool:
     calculated_crc: str = ""
 
     # Find the end of message character '!'
-    LOG.debug("Checking message CRC. Message length is {}.".format(len(raw_msg)))
+    log.debug("Checking message CRC. Message length is {}.".format(len(raw_msg)))
     pos = raw_msg.find(b"!")
     data = raw_msg[: pos + 1]
 
@@ -73,17 +72,17 @@ def check_msg(raw_msg: bytearray) -> bool:
         provided_crc = hex(int(raw_msg[pos + 1 :].strip(), 16))  # noqa: E203
         calculated_crc = hex(Crc16Lha.calc(data))
     except ValueError:
-        LOG.warning("Unable to calculate CRC! Provided value: {}".format(provided_crc))
+        log.warning("Unable to calculate CRC! Provided value: {}".format(provided_crc))
         return False
     except Exception as e:
-        LOG.exception(e)
+        log.exception(e)
         return False
 
     crc_match = calculated_crc == provided_crc
     if crc_match:
-        LOG.debug("Telegram has a valid CRC.")
+        log.debug("Telegram has a valid CRC.")
     else:
-        LOG.warning(
+        log.warning(
             "Telegram has an invalid CRC! Provided: {} - Calculated: {}".format(
                 provided_crc, calculated_crc
             )
@@ -93,6 +92,7 @@ def check_msg(raw_msg: bytearray) -> bool:
 
 
 def read_serial(
+    log_q: Queue,
     msg_q: Queue,
     port: str,
     baudrate: int,
@@ -107,6 +107,8 @@ def read_serial(
 
     _quit_after is only used during testing to break the infinite loop while reading from the serial port.
     """
+    global log
+    log = child_logger(log_q)
     telegram_count: int = 0
     telegram_pointer: int = 0
     telegram_last_time = 0
@@ -114,14 +116,14 @@ def read_serial(
     start_of_telegram_detected: bool = False
     telegram: bytearray = bytearray()
 
-    LOG.debug(
+    log.debug(
         f"Open serial port '{port}' with settings '{baudrate},{bytesize},{parity},{stopbits}'."
     )
 
     with serial.Serial(
         port, baudrate, bytesize, parity, stopbits, timeout=5
     ) as serial_port:
-        LOG.debug(f"Reading from serial port '{port}'.")
+        log.debug(f"Reading from serial port '{port}'.")
         while True:
             try:
                 # Read data from port
@@ -136,10 +138,10 @@ def read_serial(
                     telegram += line
 
                 if END_OF_TELEGRAM.search(line.decode("ascii")):  # End of message
-                    LOG.debug("End of message deteced.")
+                    log.debug("End of message deteced.")
                     telegram_count += 1
                     start_of_telegram_detected = False
-                    LOG.debug(
+                    log.debug(
                         "Recorded a new telegram:{}".format(telegram.decode("ascii"))
                     )
 
@@ -150,26 +152,26 @@ def read_serial(
                             "Electricity",
                             convert_timestamp(queue_data.get("timestamp")),
                         )
-                        LOG.debug("Adding parsed data to the queue.")
+                        log.debug("Adding parsed data to the queue.")
                         msg_q.put(queue_data)
 
             except (SerialException):
-                LOG.error("Error while reading serial port.")
+                log.error("Error while reading serial port.")
                 start_of_telegram_detected = False
 
             except (UnicodeDecodeError) as e:
-                LOG.error(f"Could not decode line received from the serial port: {e}")
+                log.error(f"Could not decode line received from the serial port: {e}")
                 start_of_telegram_detected = False
 
             except (Exception):
-                LOG.exception("Uncaught exception while reading from the serial port!")
+                log.exception("Uncaught exception while reading from the serial port!")
                 pass
 
             if (
                 int(time.monotonic()) % 60 == 0
                 and int(time.monotonic()) - telegram_last_time > 5
             ):
-                LOG.info(
+                log.info(
                     "Received {} telegrams from the digital meter in the last minute.".format(
                         telegram_count - telegram_pointer
                     )  # noqa E501
@@ -182,13 +184,15 @@ def read_serial(
 
 
 def fake_serial(
+    log_q: Queue,
     msg_q: Queue,
     filename: str,
     wait: bool = True,
 ) -> None:
     """Read data from a file. If run_forever is True, restart when EOF is reached."""
-
-    LOG.debug("Running fake serial.")
+    global log
+    log = child_logger(log_q)
+    log.debug("Running fake serial.")
 
     telegram = ""
     with open(filename) as fh:
@@ -212,6 +216,6 @@ def fake_serial(
 
     while True:
         if msg_q.empty():
-            LOG.debug("The queue is empty...")
+            log.debug("The queue is empty...")
             break
         sleep(1)
