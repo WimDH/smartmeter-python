@@ -222,6 +222,7 @@ def main() -> None:
     log.debug("Board info: {}".format(str(gpio.pi_info())))
 
     influx_cfg: Union[configparser.SectionProxy, None] = None
+    csv_cfg: Union[configparser.SectionProxy, None] = None
     load_cfg: Union[List[configparser.SectionProxy], None] = None
 
     if "influx" in config.sections() and config.getboolean(
@@ -231,6 +232,14 @@ def main() -> None:
         log.debug("InfluxDB is configured at {}".format(influx_cfg["url"]))
     else:
         log.info("InfluxDB is disabled or not configured!")
+
+    if "csv" in config.sections() and config.getboolean(
+        section="csv", option="enabled"
+    ):
+        csv_cfg = config["csv"]
+        log.debug("CSV writer is configured to write to {}".format(csv_cfg["file_path"]))
+    else:
+        log.info("CSV writer is disabled or not configured!")
 
     # Get all the loads from the configfile
     load_cfg = [config[s] for s in config.sections() if s.startswith("load")]
