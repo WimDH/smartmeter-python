@@ -3,7 +3,7 @@
 ## Description
 smartmeter is an application that reads data from the (Belgian) digital meters, allows to switch on/off loads depending on how much we draw from or inject into the grid.
 The idea for this script came when the analog meters were replaced by digital ones. The latter do not count backwards, but instead count what we draw and what we inject separately.
-Besides switching load, the application can export the data to an InfluxDB.
+Besides switching load, the application can export the data to an InfluxDB, or to CSV files.
 
 ## Design
 Smartmeter is tested on a Raspberry Pi, but in can also run on a PC/server. During the development and initial testing, I used an old Raspberry Pi (model B rev. 2). Some of the design decisions are based upon this old model. I thought if it can run an an old pi, it must work on the newer versions as well.

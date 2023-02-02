@@ -100,7 +100,7 @@ def convert_timestamp(timestamp: str) -> str:
 def calculate_timestamp_drift(ts_type: str, iso_8601_timestamp: str) -> int:
     """
     Calculates the drift between the system time and the telegram timestamp.
-    Log a warning message when the drift is more than one minute.
+    Log a warning message when the drift is more than one minute. (Disabled)
     """
     local_timestamp = datetime.now().astimezone()
     telegram_timestamp = dateutil_parser.parse(iso_8601_timestamp)

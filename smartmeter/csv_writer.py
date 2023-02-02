@@ -51,7 +51,7 @@ class CSVWriter:
                 + ".csv",
             )
             target_filename = os.path.join(
-                self.path, os.path.split(filename)[1][len(WIP_PREFIX):]
+                self.path, os.path.split(filename)[1][len(WIP_PREFIX) :]
             )
             if not os.path.exists(target_filename):
                 return filename
@@ -94,11 +94,13 @@ class CSVWriter:
         self.filehandler.close()
         # If no rows have been written to the file, we can remove it.
         if self.lines_written == 0:
-            LOG.debug("Removing file {} since no rows were written to it.".format(filename))
+            LOG.debug(
+                "Removing file {} since no rows were written to it.".format(filename)
+            )
             os.unlink(filename)
         else:
             new_filename = os.path.join(
-                self.path, os.path.split(filename)[1][len(WIP_PREFIX):]
+                self.path, os.path.split(filename)[1][len(WIP_PREFIX) :]
             )
             LOG.debug("Renaming file to {}.".format(new_filename))
             os.rename(filename, new_filename)

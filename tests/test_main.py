@@ -51,9 +51,27 @@ def test_load_config() -> None:
     ]
 
     assert config.items("influx") == [
+        ("enabled", "yes"),
         ("url", '"https://127.0.0.1:8086"'),
         ("token", '"ABC123"'),
         ("org", '"your_org"'),
         ("verify_ssl", "yes"),
         ("bucket", "smartmeter"),
+    ]
+
+    assert config.items("csv") == [
+        ("enabled", "no"),
+        ("file_prefix", "smartmeter_data_"),
+        ("file_path", "/data"),
+        ("write_header", "yes"),
+        ("max_lines", "100"),
+        ("max_age", "300"),
+    ]
+
+    assert config.items("load:aux") == [
+        ("enabled", "no"),
+        ("max_power", "2300"),
+        ("switch_on", "75"),
+        ("switch_off", "10"),
+        ("hold_timer", "10"),
     ]

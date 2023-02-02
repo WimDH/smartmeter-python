@@ -21,7 +21,7 @@ def load_json_datapoints() -> json:
         data = json.load(jf)
 
     row = data[0]
-    del row['local_timestamp']
+    del row["local_timestamp"]
     data = [row for r in range(5)]
 
     return data
@@ -35,8 +35,11 @@ def test_write_to_file() -> None:
     data = load_json_datapoints()
 
     writer = CSVWriter(
-        prefix="smartmeter_testfile", path="/tmp", write_header=True, max_lines=5,
-        write_every=2
+        prefix="smartmeter_testfile",
+        path="/tmp",
+        write_header=True,
+        max_lines=5,
+        write_every=2,
     )
 
     for row in data:
@@ -45,7 +48,7 @@ def test_write_to_file() -> None:
     writer.close(flush=True)
 
     filename = os.path.join(
-        writer.path, os.path.split(writer.filename)[1][len(WIP_PREFIX):]
+        writer.path, os.path.split(writer.filename)[1][len(WIP_PREFIX) :]
     )
 
     assert os.path.exists(filename)
