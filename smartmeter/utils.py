@@ -19,7 +19,7 @@ def main_logger(
     """
     Setup the logging targets.
     """
-    logger = logging.getLogger()
+    logger = logging.getLogger("smartmeter")
     logger.setLevel(getattr(logging, loglevel.upper()))
 
     # Log to a file.
@@ -41,23 +41,24 @@ def main_logger(
 
     while True:
         log_record = log_queue.get()
-        logger = logging.getLogger()
+        if log_record is None:
+            logger.debug("Stopping the logging process.")
+            break
         logger.handle(log_record)
 
 
-def child_logger(loglevel, queue):
+def child_logger(queue):
     """
     Create a logger for the child processes.
     """
-    logger = logging.getLogger()
-    logger.setLevel(getattr(logging, loglevel.upper()))
+    logger = logging.getLogger("smartmeter")
     logger.addHandler(QueueHandler(queue))
 
     return logger
 
 
-def get_queue_logger():
-    return logging.getLogger("queue_logger")
+# def get_queue_logger():
+#     return logging.getLogger("queue_logger")
 
 
 def autoformat(value: Union[str, int, float]) -> Union[str, int, float]:
