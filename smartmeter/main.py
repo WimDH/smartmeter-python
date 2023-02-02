@@ -80,6 +80,7 @@ def main_worker(
     Spawns coroutines.
     """
     db = None
+    csv_writer = None
     loop = asyncio.get_event_loop()
     log = logging.getLogger()
 
