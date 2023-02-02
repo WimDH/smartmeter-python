@@ -1,4 +1,3 @@
-import logging
 from crccheck.crc import Crc16Lha
 import serial
 import re
@@ -130,7 +129,7 @@ def read_serial(
                 line = serial_port.readline()
 
                 if START_OF_TELEGRAM.search(line.decode("ascii")):  # Start of message
-                    LOG.debug("Start of message deteced.")
+                    log.debug("Start of message deteced.")
                     telegram = bytearray()
                     start_of_telegram_detected = True
 

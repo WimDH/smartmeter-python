@@ -87,6 +87,7 @@ def main_worker(
 
     if influx_db_cfg and influx_db_cfg.getboolean("enabled"):
         db = DbInflux(
+            log_q=log_q,
             url=influx_db_cfg.get("url"),
             token=influx_db_cfg.get("token"),
             org=influx_db_cfg.get("org"),
@@ -97,6 +98,7 @@ def main_worker(
 
     if csv_cfg and csv_cfg.getboolean("enabled"):
         csv_writer = CSVWriter(
+            log_q=log_q,
             prefix=influx_db_cfg.get("file_prefix", "smartmeter_"),
             path=influx_db_cfg.get("path"),
             write_header=influx_db_cfg.getboolean("write_header", True),
@@ -106,6 +108,7 @@ def main_worker(
         )
 
     if load_cfg:
+        #TODO: fix logging in loadmanager!
         loads = LoadManager()
         log.info("Adding the loads to the loadmanager.")
         [loads.add_load(l) for l in load_cfg]
