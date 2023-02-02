@@ -107,7 +107,7 @@ def main_worker(
         loads = LoadManager()
         log.info("Adding the loads to the loadmanager.")
         [loads.add_load(l) for l in load_cfg]
-    
+
     log.debug("Start queue worker routine.")
     asyncio.ensure_future(
             queue_worker(msg_q, db, csv_writer, loads, influx_db_cfg.getint("upload_interval", 0))
@@ -149,9 +149,11 @@ async def queue_worker(
 
                 if db:
                     # InfluxDB
+                    log.debug("Writing data to InfluxDB.")
                     await db.write(data, upload_interval)
-                
+
                 if csv_writer:
+                    log.debug("Writing data to CSV files.")
                     # CSV writer
                     csv_writer.write(data)
 
@@ -277,7 +279,7 @@ def main() -> None:
 
     log.info("Starting worker.")
     dispatcher_process = mp.Process(
-        target=main_worker, args=(log_level, log_queue, io_msg_q, influx_cfg, load_cfg)
+        target=main_worker, args=(log_level, log_queue, io_msg_q, influx_cfg, csv_cfg, load_cfg)
     )
     dispatcher_process.start()
     dispatcher_process.join()
